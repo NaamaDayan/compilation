@@ -120,7 +120,7 @@ dq %1
 	db \"Error: trying to apply not-a-closure\", 0
 const_tbl:
 " ^ (String.concat "\n" (List.map make_constant consts_tbl)) ^ "
-
+;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
 %define SOB_VOID_ADDRESS " ^ get_const_address Void ^ "
