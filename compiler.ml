@@ -27,7 +27,7 @@ let make_prologue consts_tbl fvars_tbl =
   let get_fvar_address constString = fvar_address constString fvars_tbl in
   let make_primitive_closure (prim, label) =
 "    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, " ^ label  ^ ")
-    mov [" ^ (get_fvar_address prim)  ^ "], rax" in
+    mov [fvar_tbl + " ^ (get_fvar_address prim)  ^ "], rax" in
   let make_constant (c, (a, s)) = s in
   
 "
@@ -51,7 +51,9 @@ db %1
 %2
 %endmacro
 
-%define MAKE_LITERAL_INT (val) MAKE_LITERAL T_INTEGER, dq val
+%macro MAKE_LITERAL_INT 1 
+MAKE_LITERAL T_INTEGER, dq %1
+%endmacro
 %define MAKE_LITERAL_CHAR (val) MAKE_LITERAL T_CHAR, db val
 %define MAKE_NIL db T_NIL
 %define MAKE_VOID db T_VOID
@@ -238,7 +240,7 @@ try
   let generate = Code_Gen.generate consts_tbl fvars_tbl in
   let code_fragment = String.concat "\n\n"
                         (List.map
-                           (fun ast -> (generate ast) ^ "\n    call write_sob_if_not_void")
+                           (fun ast -> (generate ast) ^ "\n    call write_sob_if_not_void\n")
                            asts) in
   let provided_primitives = file_to_string "prims.s" in
                   

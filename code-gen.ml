@@ -408,8 +408,7 @@ let rec genCode exp deepCounter= match exp with
 (*Tests*)
 (* - make_const_list test *)
 (*
-(print_string (print_consts_as_list (make_consts_list [Applic' (LambdaSimple' (["x"], Seq' ([Set' (Var' (VarParam ("x", 0)), Box' (VarParam ("x", 0)));If' (Applic' (BoxGet' (VarParam ("x", 0)), [Const' (Sexpr (Number (Int (1))))]), ApplicTP' (BoxGet' (VarParam ("x", 0)), [Const' (Sexpr (Number (Int (2))))]), ApplicTP' (LambdaSimple' (["x"], Set' (Var' (VarParam ("x", 0)), Const' (Sexpr (Number (Int (0)))))), 
-                               [Const' (Sexpr (Number (Int (3))))]))])), [LambdaSimple' (["x"], Var' (VarParam ("x", 0))) ; LambdaSimple' ([], Const' (Sexpr (Number (Int (1)))))])])));;
+(printThreesomesList (make_consts_tbl [Const'(Sexpr(Number(Int(1))))]));;
 (print_string "\n");;
 
 
