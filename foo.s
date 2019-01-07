@@ -86,6 +86,7 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
+MAKE_LITERAL_INT(1)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -166,69 +167,69 @@ mov rbp, rsp
     MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_boolean)
     mov [fvar_tbl + 0], rax
     MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_float)
-    mov [fvar_tbl + 1], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_integer)
-    mov [fvar_tbl + 2], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_pair)
-    mov [fvar_tbl + 3], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_null)
-    mov [fvar_tbl + 4], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_char)
-    mov [fvar_tbl + 5], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_vector)
-    mov [fvar_tbl + 6], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_string)
-    mov [fvar_tbl + 7], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_procedure)
     mov [fvar_tbl + 8], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_symbol)
-    mov [fvar_tbl + 9], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_length)
-    mov [fvar_tbl + 10], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_ref)
-    mov [fvar_tbl + 11], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_set)
-    mov [fvar_tbl + 12], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, make_string)
-    mov [fvar_tbl + 13], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_length)
-    mov [fvar_tbl + 14], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_ref)
-    mov [fvar_tbl + 15], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_set)
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_integer)
     mov [fvar_tbl + 16], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, make_vector)
-    mov [fvar_tbl + 17], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, symbol_to_string)
-    mov [fvar_tbl + 18], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, char_to_integer)
-    mov [fvar_tbl + 19], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, integer_to_char)
-    mov [fvar_tbl + 20], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_eq)
-    mov [fvar_tbl + 21], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_add)
-    mov [fvar_tbl + 22], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_mul)
-    mov [fvar_tbl + 23], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_sub)
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_pair)
     mov [fvar_tbl + 24], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_div)
-    mov [fvar_tbl + 25], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_lt)
-    mov [fvar_tbl + 26], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_equ)
-    mov [fvar_tbl + 27], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, car)
-    mov [fvar_tbl + 28], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cdr)
-    mov [fvar_tbl + 29], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, set_car)
-    mov [fvar_tbl + 30], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, set_cdr)
-    mov [fvar_tbl + 31], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cons)
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_null)
     mov [fvar_tbl + 32], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_char)
+    mov [fvar_tbl + 40], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_vector)
+    mov [fvar_tbl + 48], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_string)
+    mov [fvar_tbl + 56], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_procedure)
+    mov [fvar_tbl + 64], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_symbol)
+    mov [fvar_tbl + 72], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_length)
+    mov [fvar_tbl + 80], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_ref)
+    mov [fvar_tbl + 88], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, string_set)
+    mov [fvar_tbl + 96], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, make_string)
+    mov [fvar_tbl + 104], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_length)
+    mov [fvar_tbl + 112], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_ref)
+    mov [fvar_tbl + 120], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, vector_set)
+    mov [fvar_tbl + 128], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, make_vector)
+    mov [fvar_tbl + 136], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, symbol_to_string)
+    mov [fvar_tbl + 144], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, char_to_integer)
+    mov [fvar_tbl + 152], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, integer_to_char)
+    mov [fvar_tbl + 160], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, is_eq)
+    mov [fvar_tbl + 168], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_add)
+    mov [fvar_tbl + 176], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_mul)
+    mov [fvar_tbl + 184], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_sub)
+    mov [fvar_tbl + 192], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_div)
+    mov [fvar_tbl + 200], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_lt)
+    mov [fvar_tbl + 208], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, bin_equ)
+    mov [fvar_tbl + 216], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, car)
+    mov [fvar_tbl + 224], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cdr)
+    mov [fvar_tbl + 232], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, set_car)
+    mov [fvar_tbl + 240], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, set_cdr)
+    mov [fvar_tbl + 248], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cons)
+    mov [fvar_tbl + 256], rax
  ;;add rsp, 4*8
  ;;pop rbp
  ;;ret
@@ -236,15 +237,12 @@ mov rbp, rsp
 MALLOC rax, 8
 mov qword rbx, [rbp + 8 * 2]
 
-mov qword extEnv, rax
+mov extEnv, rax
 mov rax, rbp 
 add rax, 8*3
 mov rax, [rax]
 MALLOC rdx, rax
 mov qword [rax], rdx
-mov qword rdx, [rax]
-mov rbx, [rbp + 8*(4 + 0)]
-mov [rdx + 0], rbx
 
 MALLOC rax, 2*8
 mov rdx, extEnv
@@ -254,7 +252,7 @@ jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-mov rax, qword [rbp + 8*(4 + 0)]
+mov rax    , const_tbl + 6
 leave
 ret
 Lcont0:

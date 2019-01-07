@@ -113,7 +113,7 @@ let runtimeFrameworkLabels = ["car";"cdr"; "map"];;
 
 let make_fvars_tbl_helper fvarsList = 
 	let rec f lst i = match lst with
-		| VarFree(head) :: tail -> [(head,i)] @ (f tail (i+1))
+		| VarFree(head) :: tail -> [(head,i)] @ (f tail (i+8))
 		| _ -> []  
 	in f fvarsList 0;;
 
@@ -346,7 +346,7 @@ let rec genCode exp deepCounter= match exp with
 	    "MALLOC rax, "^ (string_of_int ((envSize+1)*8)) ^ "\n" ^
 	    "mov qword rbx, [rbp + 8 * 2]\n" ^ (*lexical env pointer *)
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov extEnv, rax\n"  ^ (* save extEnv pointer *)
+	    "mov extEnv, [rax]\n"  ^ (* save extEnv pointer *)
 	    "mov rax, rbp \n" ^
 	    "add rax, 8*3\n" ^
 	    "mov rax, [rax]\n"^
@@ -391,11 +391,10 @@ let rec genCode exp deepCounter= match exp with
 	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
 	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
 	    	(genCode proc deepCounter) ^ "\n" ^
-	    	"cmp rax, T_CLOSURE\n" ^
+	    	"cmp byte [rax], T_CLOSURE\n" ^
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
 	    	"push qword [rax + TYPE_SIZE]\n" ^ (*push env*)
-	    	"push qword [rbp + 8 * 1] ; old ret addr\n" ^(*: TODO: Check if we need this???*)
-	    	"call [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
+	    	"call [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body, ret address is pushed*)
 	    	"jmp " ^ finishedApplicLabel ^ "\n" ^
 	    	notAClosureLabel ^ ":\n" ^
 	    	"\tmov rdi, notACLosureError\n" ^
