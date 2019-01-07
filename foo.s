@@ -6,8 +6,10 @@
 section .bss
 malloc_pointer:
     resq 1
+    
 
 section .data
+
 
 ;;macros we added:
 %define WORD_BYTES 8
@@ -234,25 +236,57 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
-MALLOC rax, 8
+MALLOC rax, 1
 mov qword rbx, [rbp + 8 * 2]
 
-mov extEnv, rax
-mov rax, rbp 
-add rax, 8*3
-mov rax, [rax]
-MALLOC rdx, rax
+mov r9, rax ;r9 = extEnv pointer 
+mov rbx, rbp 
+add rbx, 8*3
+mov rbx, [rbx]
+MALLOC rdx, rbx
 mov qword [rax], rdx
+mov qword rdx, [rax]
+mov rbx, [rbp + 8*(4 + 0)]
+mov [rdx + 0], rbx
 
-MALLOC rax, 2*8
-mov rdx, extEnv
-mov [rax], rdx
-mov rdx,Lcode0
+MALLOC rax, TYPE_SIZE+2*WORD_BYTES
+mov byte [rax], T_CLOSURE
+mov rdx, r9
+mov [rax+TYPE_SIZE], rdx
+mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode0
 jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
+MALLOC rax, 2
+mov qword rbx, [rbp + 8 * 2]
+mov qword rdx, [rbx + 0]
+mov qword [rax + 8], rdx
+
+mov r9, rax ;r9 = extEnv pointer 
+mov rbx, rbp 
+add rbx, 8*3
+mov rbx, [rbx]
+MALLOC rdx, rbx
+mov qword [rax], rdx
+mov qword rdx, [rax]
+mov rbx, [rbp + 8*(4 + 0)]
+mov [rdx + 0], rbx
+
+MALLOC rax, TYPE_SIZE+2*WORD_BYTES
+mov byte [rax], T_CLOSURE
+mov rdx, r9
+mov [rax+TYPE_SIZE], rdx
+mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode1
+jmp Lcont1
+Lcode1:
+ push rbp
+mov rbp, rsp
 mov rax    , const_tbl + 6
+leave
+ret
+Lcont1:
+ 
 leave
 ret
 Lcont0:

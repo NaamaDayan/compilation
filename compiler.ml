@@ -38,8 +38,10 @@ let make_prologue consts_tbl fvars_tbl =
 section .bss
 malloc_pointer:
     resq 1
+    
 
 section .data
+
 
 ;;macros we added:
 %define WORD_BYTES 8

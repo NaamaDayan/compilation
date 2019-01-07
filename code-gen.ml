@@ -343,20 +343,21 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    "MALLOC rax, "^ (string_of_int ((envSize+1)*8)) ^ "\n" ^
+	    "MALLOC rax, "^ (string_of_int (envSize+1)) ^ "\n" ^
 	    "mov qword rbx, [rbp + 8 * 2]\n" ^ (*lexical env pointer *)
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov extEnv, [rax]\n"  ^ (* save extEnv pointer *)
-	    "mov rax, rbp \n" ^
-	    "add rax, 8*3\n" ^
-	    "mov rax, [rax]\n"^
-	    "MALLOC rdx, rax\n" ^ (* number of params *)
+	    "mov r9, rax ;r9 = extEnv pointer \n"  ^ (* save extEnv pointer *)
+	    "mov rbx, rbp \n" ^
+	    "add rbx, 8*3\n" ^
+	    "mov rbx, [rbx]\n"^
+	    "MALLOC rdx, rbx\n" ^ (* number of params *)
 	    "mov qword [rax], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
-	    "MALLOC rax, 2*8\n" ^ (*malloc closure -- check this! maybe add tag?? *)
-	    "mov rdx, extEnv\n" ^(*check maube without [] *)
-	    "mov [rax], rdx\n" ^
-	    "mov rdx," ^ lcodeLabel ^ "\n"^ (*check this! *)
+	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES\n" ^ (*malloc closure  *)
+	    "mov byte [rax], T_CLOSURE\n"^
+	    "mov rdx, r9\n" ^(*check maybe without [] *)
+	    "mov [rax+TYPE_SIZE], rdx\n" ^
+	   	"mov qword [rax+TYPE_SIZE+WORD_BYTES], "^ lcodeLabel ^"\n" ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
 	    "push rbp\n" ^
