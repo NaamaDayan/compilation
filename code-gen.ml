@@ -90,7 +90,7 @@ let make_fvars_list exprTag_lst =
 	buildFreeVarList [] in
   let freeVarsList = List.flatten (List.map findFreeVarsInExpr' exprTag_lst) in
 
-
+(*TODO:: maybe remove the initial values from here! *)
   let withInitialfreeVars= [VarFree("boolean?"); VarFree("float?"); VarFree("integer?"); VarFree("pair?");
    VarFree("null?"); VarFree("char?"); VarFree("vector?"); VarFree("string?");
    VarFree("procedure?"); VarFree("symbol?"); VarFree("string-length");
@@ -159,9 +159,9 @@ let rec sexpr_to_tuple sexpr offset sexprs_offset=
 	| Number(Int(a)) -> toTuple ("MAKE_LITERAL_INT("^(string_of_int a)^")")
 	| Number(Float(a)) -> toTuple ("MAKE_LITERAL_FLOAT("^(string_of_float a)^")") (*TODO:: check this!! *)
 	| String(str) -> toTuple ("MAKE_LITERAL_STRING(\""^str^"\")")
-	| Symbol(s) -> toTuple ("MAKE_LITERAL_SYMBOL(consts+"^(string_of_int (findStringOffset sexprs_offset (String s)))^")")
+	| Symbol(s) -> toTuple ("MAKE_LITERAL_SYMBOL(const_tbl+"^(string_of_int (findStringOffset sexprs_offset (String s)))^")")
 	| Vector(lst) -> toTuple "MAKE_LITERAL_VECTOR" (*not implemented yet*)
-	| Pair(car, cdr) -> toTuple ("MAKE_LITERAL(consts+" ^(string_of_int (findStringOffset sexprs_offset car))^ ", consts+"^(string_of_int (findStringOffset sexprs_offset cdr))^")") ;;(*not implemented yet *)
+	| Pair(car, cdr) -> toTuple ("MAKE_LITERAL_PAIR(const_tbl+" ^(string_of_int (findStringOffset sexprs_offset car))^ ", const_tbl+"^(string_of_int (findStringOffset sexprs_offset cdr))^")") ;;(*not implemented yet *)
 
 let rec const_to_tuple const offset sexprs_offset = 
 	match const with 
@@ -292,7 +292,7 @@ let makeNumberedLabel label num =
 
 let generate consts fvars e = 
 let rec genCode exp deepCounter= match exp with
-		| Const'(c) -> "mov rax, " ^ const_address c consts(*todo: check this????*)
+		| Const'(c) -> "mov rax    , const_tbl + " ^ const_address c consts(*todo: check this????*)
 	    | Var'(VarParam(_, minor)) -> "mov rax, qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")]"
 	    | Set'(Var'(VarParam(_, minor)), exp) -> (genCode exp deepCounter) ^ "\n" ^
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
@@ -305,18 +305,18 @@ let rec genCode exp deepCounter= match exp with
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
 	    										  "mov rax, SOB_VOID"
-	    | Var'(VarFree(x)) -> "mov rax, qword [" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
+	    | Var'(VarFree(x)) -> "mov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
 	    | Set'(Var'(VarFree(v)), exp) -> (genCode exp deepCounter) ^ "\n" ^
-	    							   "mov qword [" ^ (fvar_address v fvars) ^ "], rax\n" ^
-	    							   "mov rax, SOB_VOID"
+	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
+	    							   "mov byte [rax], SOB_VOID"
 		| Seq'(lst) -> let f acc expr = (acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
 	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "Lexit" !orCounter) in
-	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE\n jne " ^ exitLabel ^ "\n") in
+	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE_ADDRESS\n jne " ^ exitLabel ^ "\n") in
 	  						(List.fold_left f "" lst) ^ exitLabel ^ ":\n" ^ (incCounter orCounter)
 	    | If'(test,dit,dif) -> let exitLabel = (makeNumberedLabel "Lexit" !ifCounter) in
 	    					   let elseLabel = (makeNumberedLabel "Lelse" !ifCounter) in
 		    					   (genCode test deepCounter) ^ "\n" ^
-		    					   "cmp rax, SOB_FALSE\n" ^
+		    					   "cmp rax, SOB_FALSE_ADDRESS\n" ^
 		    					   "je " ^ elseLabel ^ "\n" ^
 		    					   (genCode dit deepCounter) ^ "\n" ^
 		    					   "jmp " ^ exitLabel ^ "\n" ^
@@ -346,12 +346,15 @@ let rec genCode exp deepCounter= match exp with
 	    "MALLOC rax, "^ (string_of_int ((envSize+1)*8)) ^ "\n" ^
 	    "mov qword rbx, [rbp + 8 * 2]\n" ^ (*lexical env pointer *)
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov [extEnv], rax\n"  ^ (* save extEnv pointer *)
-	    "MALLOC rdx, [rbp + 8 * 3]\n" ^ (* number of params *)
-	    "mov [rax], rdx\n" ^
+	    "mov extEnv, rax\n"  ^ (* save extEnv pointer *)
+	    "mov rax, rbp \n" ^
+	    "add rax, 8*3\n" ^
+	    "mov rax, [rax]\n"^
+	    "MALLOC rdx, rax\n" ^ (* number of params *)
+	    "mov qword [rax], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
 	    "MALLOC rax, 2*8\n" ^ (*malloc closure -- check this! maybe add tag?? *)
-	    "mov rdx, [extEnv]\n" ^(*check maube without [] *)
+	    "mov rdx, extEnv\n" ^(*check maube without [] *)
 	    "mov [rax], rdx\n" ^
 	    "mov rdx," ^ lcodeLabel ^ "\n"^ (*check this! *)
 	    "jmp " ^ lcontLabel ^ "\n" ^
@@ -366,7 +369,7 @@ let rec genCode exp deepCounter= match exp with
 	    and copyParams i n str = 
 	    	if i<n then
 	    		(copyParams (i+1) n (str ^ 
-	    			"move rdx, [rax]\n" ^
+	    			"mov qword rdx, [rax]\n" ^
 	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")]\n"^ (*rbx = param(i) *)
 	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx\n" (*rdx = extEnv[0], rdx[i] = rbx *)
 	    		))
@@ -390,12 +393,12 @@ let rec genCode exp deepCounter= match exp with
 	    	(genCode proc deepCounter) ^ "\n" ^
 	    	"cmp rax, T_CLOSURE\n" ^
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
-	    	"push [rax + TYPE_SIZE]\n" ^ (*push env*)
+	    	"push qword [rax + TYPE_SIZE]\n" ^ (*push env*)
 	    	"push qword [rbp + 8 * 1] ; old ret addr\n" ^(*: TODO: Check if we need this???*)
 	    	"call [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
 	    	"jmp " ^ finishedApplicLabel ^ "\n" ^
 	    	notAClosureLabel ^ ":\n" ^
-	    	"\tmov rdi, .notACLosureError\n" ^
+	    	"\tmov rdi, notACLosureError\n" ^
 	    	"\tcall print_string\n" ^
 	    	"\tmov rax, 1\n" ^
 	    	"\tsyscall\n" ^
