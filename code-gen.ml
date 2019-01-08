@@ -283,6 +283,7 @@ let make_fvars_tbl asts = make_fvars_tbl_helper (make_fvars_list asts);;
 let orCounter = ref 0;;
 let ifCounter = ref 0;;
 let applicCounter = ref 0;;
+let applicTPCounter = ref 0;;
 let lambdaCounter = ref 0;;
 
 let incCounter counterRef = counterRef := !counterRef + 1 ; "";;
@@ -297,11 +298,11 @@ let rec genCode exp deepCounter= match exp with
 	    | Set'(Var'(VarParam(_, minor)), exp) -> (genCode exp deepCounter) ^ "\n" ^
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
 	    										  "mov rax, SOB_VOID"
-	    | Var'(VarBound(_, major, minor)) -> "mov rax, qword[rpb + 8*2]\n" ^
+	    | Var'(VarBound(_, major, minor)) -> "mov rax, qword[rbp + 8*2]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int major) ^ "]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
 		| Set'(Var'(VarBound(_, major, minor)), exp) -> (genCode exp deepCounter) ^ "\n" ^
-												  "mov rbx, qword[rpb + 8*2]\n" ^
+												  "mov rbx, qword[rbp + 8*2]\n" ^
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
 	    										  "mov rax, SOB_VOID"
@@ -331,7 +332,7 @@ let rec genCode exp deepCounter= match exp with
 	    							"pop qword [rax]\n" ^
 	    							"mov rax, SOB_VOID"
 		| Applic'(proc,argList) -> applicCodeGen proc argList deepCounter
-	    | ApplicTP'(proc,params) -> applicCodeGen proc params deepCounter (*raise X_not_yet_implemented*)
+	    | ApplicTP'(proc,params) -> applicTPCodeGen proc params deepCounter (*raise X_not_yet_implemented*)
 	    | LambdaSimple'(argNames,body) -> lambdaCodeGen argNames body deepCounter
 	    | LambdaOpt'(args,option_arg,body) -> raise X_not_yet_implemented
 	    | Def'(var,value) -> raise X_not_yet_implemented 
@@ -351,12 +352,12 @@ let rec genCode exp deepCounter= match exp with
 	    "add rbx, 8*3\n" ^
 	    "mov rbx, [rbx]\n"^
 	    "MALLOC rdx, rbx\n" ^ (* number of params *)
-	    "mov qword [rax], rdx\n" ^
+	    "mov r11, rdx\n"^
+	    "mov [r9], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
 	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES\n" ^ (*malloc closure  *)
 	    "mov byte [rax], T_CLOSURE\n"^
-	    "mov rdx, r9\n" ^(*check maybe without [] *)
-	    "mov [rax+TYPE_SIZE], rdx\n" ^
+	    "mov [rax+TYPE_SIZE], r9\n" ^
 	   	"mov qword [rax+TYPE_SIZE+WORD_BYTES], "^ lcodeLabel ^"\n" ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
@@ -370,7 +371,7 @@ let rec genCode exp deepCounter= match exp with
 	    and copyParams i n str = 
 	    	if i<n then
 	    		(copyParams (i+1) n (str ^ 
-	    			"mov qword rdx, [rax]\n" ^
+	    			"mov qword rdx, [r9]\n" ^
 	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")]\n"^ (*rbx = param(i) *)
 	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx\n" (*rdx = extEnv[0], rdx[i] = rbx *)
 	    		))
@@ -403,6 +404,31 @@ let rec genCode exp deepCounter= match exp with
 	    	"\tmov rax, 1\n" ^
 	    	"\tsyscall\n" ^
 	    	finishedApplicLabel ^ ":\n" ^ (incCounter applicCounter)
+
+
+	     and applicTPCodeGen proc argList deepCounter=
+	    let notAClosureLabel = (makeNumberedLabel "NotAClosureTP" !applicTPCounter) in
+	    let f argExpr acc = acc ^ ((genCode argExpr deepCounter)^"\n push rax\n") in 
+	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
+	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
+	    	(genCode proc deepCounter) ^ "\n" ^
+	    	"cmp byte [rax], T_CLOSURE\n" ^
+	    	"jne " ^ notAClosureLabel ^ "\n" ^
+	    	"push qword [rax + TYPE_SIZE]\n" ^ (*push env*)
+	    	"push qword [rbp + WORD_BYTES*1]\n" ^ (*old ret address*)
+	    	"mov qword r10, [rbp]\n"^
+	    	"mov r2, PARAM_COUNT ; save old param count \n"^
+	    	"SHIFT_FRAME 4+"^(string_of_int (List.length argList))^"\n" ^
+	    	"CLEAN_STACK r2\n"^
+	    	"mov qword [rsp], r10 ;save old old rbp\n"^
+	    	"jmp [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
+	    	notAClosureLabel ^ ":\n" ^
+	    	"\tmov rdi, notACLosureError\n" ^
+	    	"\tcall print_string\n" ^
+	    	"\tmov rax, 1\n" ^
+	    	"\tsyscall\n" ^ (incCounter applicTPCounter)
+
+
 	   in genCode e 0;;
 	    	
 

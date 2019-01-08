@@ -110,6 +110,27 @@ dq %1
 %define VECTOR_LEN LOWER_DATA
 %define VECTOR_REF(r,i) qword [r+TYPE_SIZE+WORD_BYTES+i*WORD_BYTES]
 
+%define PARAM_COUNT qword [rbp+3*WORD_SIZE]
+
+%macro SHIFT_FRAME 1
+  push rax
+  mov rax, PARAM_COUNT
+  add rax, 4
+%assign i 1
+%rep %1
+  dec rax
+  mov qword r8, [rbp-WORD_BYTES*i]
+  mov [rbp+WORD_BYTES*rax], r8
+% assign i i+1
+%endrep
+  pop rax
+%endmacro
+
+;%1 = param count in old frame
+%macro CLEAN_STACK 1
+  add rsp, WORD_BYTES * (4+%1)
+%endmacro
+
 ;;end self written macros!!!
 
 

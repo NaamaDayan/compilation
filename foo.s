@@ -78,6 +78,27 @@ dq %1
 %define VECTOR_LEN LOWER_DATA
 %define VECTOR_REF(r,i) qword [r+TYPE_SIZE+WORD_BYTES+i*WORD_BYTES]
 
+%define PARAM_COUNT qword [rbp+3*WORD_SIZE]
+
+%macro SHIFT_FRAME 1
+  push rax
+  mov rax, PARAM_COUNT
+  add rax, 4
+%assign i 1
+%rep %1
+  dec rax
+  mov qword r8, [rbp-WORD_BYTES*i]
+  mov [rbp+WORD_BYTES*rax], r8
+% assign i i+1
+%endrep
+  pop rax
+%endmacro
+
+;%1 = param count in old frame
+%macro CLEAN_STACK 1
+  add rsp, WORD_BYTES * (4+%1)
+%endmacro
+
 ;;end self written macros!!!
 
 
@@ -89,6 +110,7 @@ MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
 MAKE_LITERAL_INT(1)
+MAKE_LITERAL_INT(2)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -236,6 +258,12 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
+mov rax    , const_tbl + 15
+ push rax
+push 1
+mov rax    , const_tbl + 6
+ push rax
+push 1
 MALLOC rax, 1
 mov qword rbx, [rbp + 8 * 2]
 
@@ -244,15 +272,15 @@ mov rbx, rbp
 add rbx, 8*3
 mov rbx, [rbx]
 MALLOC rdx, rbx
-mov qword [rax], rdx
-mov qword rdx, [rax]
+mov r11, rdx
+mov [r9], rdx
+mov qword rdx, [r9]
 mov rbx, [rbp + 8*(4 + 0)]
 mov [rdx + 0], rbx
 
 MALLOC rax, TYPE_SIZE+2*WORD_BYTES
 mov byte [rax], T_CLOSURE
-mov rdx, r9
-mov [rax+TYPE_SIZE], rdx
+mov [rax+TYPE_SIZE], r9
 mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode0
 jmp Lcont0
 Lcode0:
@@ -268,21 +296,23 @@ mov rbx, rbp
 add rbx, 8*3
 mov rbx, [rbx]
 MALLOC rdx, rbx
-mov qword [rax], rdx
-mov qword rdx, [rax]
+mov r11, rdx
+mov [r9], rdx
+mov qword rdx, [r9]
 mov rbx, [rbp + 8*(4 + 0)]
 mov [rdx + 0], rbx
 
 MALLOC rax, TYPE_SIZE+2*WORD_BYTES
 mov byte [rax], T_CLOSURE
-mov rdx, r9
-mov [rax+TYPE_SIZE], rdx
+mov [rax+TYPE_SIZE], r9
 mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode1
 jmp Lcont1
 Lcode1:
  push rbp
 mov rbp, rsp
-mov rax    , const_tbl + 6
+mov rax, qword[rbp + 8*2]
+mov rax, qword [rax + 8 * 0]
+mov rax, qword [rax + 8 * 0]
 leave
 ret
 Lcont1:
@@ -291,6 +321,30 @@ leave
 ret
 Lcont0:
  
+cmp byte [rax], T_CLOSURE
+jne NotAClosure1
+push qword [rax + TYPE_SIZE]
+call [rax + TYPE_SIZE + WORD_BYTES]
+jmp FinishedApplic1
+NotAClosure1:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic1:
+
+cmp byte [rax], T_CLOSURE
+jne NotAClosure0
+push qword [rax + TYPE_SIZE]
+call [rax + TYPE_SIZE + WORD_BYTES]
+jmp FinishedApplic0
+NotAClosure0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic0:
+
     call write_sob_if_not_void
 leave
  ret
