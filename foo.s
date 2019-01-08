@@ -110,7 +110,6 @@ MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
 MAKE_LITERAL_INT(1)
-MAKE_LITERAL_INT(2)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -258,27 +257,28 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
-mov rax    , const_tbl + 15
- push rax
-push 1
+;applic
+push 0
+;applic
+;const
 mov rax    , const_tbl + 6
  push rax
 push 1
-MALLOC rax, 1
-mov qword rbx, [rbp + 8 * 2]
+;lambdaSimple
+MALLOC r9, 1;r9 = extEnv pointer
+mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
 
-mov r9, rax ;r9 = extEnv pointer 
 mov rbx, rbp 
 add rbx, 8*3
 mov rbx, [rbx]
-MALLOC rdx, rbx
+MALLOC rdx, rbx ;number of params
 mov r11, rdx
 mov [r9], rdx
-mov qword rdx, [r9]
-mov rbx, [rbp + 8*(4 + 0)]
-mov [rdx + 0], rbx
+;copyParamsLoop:/nmov qword rdx, [r9]
+mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
+mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
 
-MALLOC rax, TYPE_SIZE+2*WORD_BYTES
+MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure
 mov byte [rax], T_CLOSURE
 mov [rax+TYPE_SIZE], r9
 mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode0
@@ -286,23 +286,20 @@ jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-MALLOC rax, 2
-mov qword rbx, [rbp + 8 * 2]
-mov qword rdx, [rbx + 0]
-mov qword [rax + 8], rdx
+;lambdaSimple
+MALLOC r9, 2;r9 = extEnv pointer
+mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
+;copyENvLoop:/nmov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
+mov qword [r9 + 8], rdx
 
-mov r9, rax ;r9 = extEnv pointer 
 mov rbx, rbp 
 add rbx, 8*3
 mov rbx, [rbx]
-MALLOC rdx, rbx
+MALLOC rdx, rbx ;number of params
 mov r11, rdx
 mov [r9], rdx
-mov qword rdx, [r9]
-mov rbx, [rbp + 8*(4 + 0)]
-mov [rdx + 0], rbx
 
-MALLOC rax, TYPE_SIZE+2*WORD_BYTES
+MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure
 mov byte [rax], T_CLOSURE
 mov [rax+TYPE_SIZE], r9
 mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode1
@@ -310,7 +307,8 @@ jmp Lcont1
 Lcode1:
  push rbp
 mov rbp, rsp
-mov rax, qword[rbp + 8*2]
+;varBound
+ mov rax, qword[rbp + 8*2]
 mov rax, qword [rax + 8 * 0]
 mov rax, qword [rax + 8 * 0]
 leave
@@ -323,8 +321,8 @@ Lcont0:
  
 cmp byte [rax], T_CLOSURE
 jne NotAClosure1
-push qword [rax + TYPE_SIZE]
-call [rax + TYPE_SIZE + WORD_BYTES]
+push qword [rax + TYPE_SIZE] ;push env
+call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed
 jmp FinishedApplic1
 NotAClosure1:
 	mov rdi, notACLosureError
@@ -335,8 +333,8 @@ FinishedApplic1:
 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0
-push qword [rax + TYPE_SIZE]
-call [rax + TYPE_SIZE + WORD_BYTES]
+push qword [rax + TYPE_SIZE] ;push env
+call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed
 jmp FinishedApplic0
 NotAClosure0:
 	mov rdi, notACLosureError

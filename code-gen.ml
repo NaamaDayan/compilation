@@ -293,29 +293,30 @@ let makeNumberedLabel label num =
 
 let generate consts fvars e = 
 let rec genCode exp deepCounter= match exp with
-		| Const'(c) -> "mov rax    , const_tbl + " ^ const_address c consts(*todo: check this????*)
-	    | Var'(VarParam(_, minor)) -> "mov rax, qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")]"
-	    | Set'(Var'(VarParam(_, minor)), exp) -> (genCode exp deepCounter) ^ "\n" ^
+		| Const'(c) -> ";const\nmov rax    , const_tbl + " ^ const_address c consts(*todo: check this????*)
+	    | Var'(VarParam(_, minor)) -> ";varParam\n mov rax, qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")]"
+	    | Set'(Var'(VarParam(_, minor)), exp) -> ";set(vatParam)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
 	    										  "mov rax, SOB_VOID"
-	    | Var'(VarBound(_, major, minor)) -> "mov rax, qword[rbp + 8*2]\n" ^
+	    | Var'(VarBound(_, major, minor)) -> ";varBound\n mov rax, qword[rbp + 8*2]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int major) ^ "]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
-		| Set'(Var'(VarBound(_, major, minor)), exp) -> (genCode exp deepCounter) ^ "\n" ^
+		| Set'(Var'(VarBound(_, major, minor)), exp) ->";set(VarBound)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 												  "mov rbx, qword[rbp + 8*2]\n" ^
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
 	    										  "mov rax, SOB_VOID"
-	    | Var'(VarFree(x)) -> "mov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
-	    | Set'(Var'(VarFree(v)), exp) -> (genCode exp deepCounter) ^ "\n" ^
+	    | Var'(VarFree(x)) -> ";varFree\nmov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
+	    | Set'(Var'(VarFree(v)), exp) -> ";set(Var(VarFree))\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
 	    							   "mov byte [rax], SOB_VOID"
-		| Seq'(lst) -> let f acc expr = (acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
+		| Seq'(lst) -> let f acc expr = ";seq\n" ^(acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
 	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "Lexit" !orCounter) in
 	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE_ADDRESS\n jne " ^ exitLabel ^ "\n") in
-	  						(List.fold_left f "" lst) ^ exitLabel ^ ":\n" ^ (incCounter orCounter)
+	  						";or\n" ^ (List.fold_left f "" lst) ^ exitLabel ^ ":\n" ^ (incCounter orCounter)
 	    | If'(test,dit,dif) -> let exitLabel = (makeNumberedLabel "Lexit" !ifCounter) in
 	    					   let elseLabel = (makeNumberedLabel "Lelse" !ifCounter) in
+		    					   ";if\n" ^ 
 		    					   (genCode test deepCounter) ^ "\n" ^
 		    					   "cmp rax, SOB_FALSE_ADDRESS\n" ^
 		    					   "je " ^ elseLabel ^ "\n" ^
@@ -324,16 +325,16 @@ let rec genCode exp deepCounter= match exp with
 		    					   elseLabel ^ ":\n" ^
 		    					   (genCode dif deepCounter) ^ "\n" ^
 		    					   exitLabel ^ ":" ^ (incCounter ifCounter)
-		| BoxGet'(v) -> (genCode (Var'(v)) deepCounter) ^ "\n" ^
+		| BoxGet'(v) -> ";boxGet\n" ^(genCode (Var'(v)) deepCounter) ^ "\n" ^
 	  						  "mov rax, qword [rax]"
-	    | BoxSet'(v, expr) -> (genCode expr deepCounter) ^ "\n" ^
+	    | BoxSet'(v, expr) -> ";boxSet\n" ^(genCode expr deepCounter) ^ "\n" ^
 	    							"push rax\n" ^
 	    							(genCode (Var' v) deepCounter) ^ "\n" ^
 	    							"pop qword [rax]\n" ^
 	    							"mov rax, SOB_VOID"
-		| Applic'(proc,argList) -> applicCodeGen proc argList deepCounter
-	    | ApplicTP'(proc,params) -> applicTPCodeGen proc params deepCounter (*raise X_not_yet_implemented*)
-	    | LambdaSimple'(argNames,body) -> lambdaCodeGen argNames body deepCounter
+		| Applic'(proc,argList) -> ";applic\n" ^ (applicCodeGen proc argList deepCounter)
+	    | ApplicTP'(proc,params) -> ";applicTP\n" ^ (applicTPCodeGen proc params deepCounter) (*raise X_not_yet_implemented*)
+	    | LambdaSimple'(argNames,body) -> ";lambdaSimple\n" ^ (lambdaCodeGen argNames body deepCounter)
 	    | LambdaOpt'(args,option_arg,body) -> raise X_not_yet_implemented
 	    | Def'(var,value) -> raise X_not_yet_implemented 
 	    | _ -> raise X_not_yet_implemented
@@ -344,18 +345,17 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    "MALLOC rax, "^ (string_of_int (envSize+1)) ^ "\n" ^
-	    "mov qword rbx, [rbp + 8 * 2]\n" ^ (*lexical env pointer *)
+	    "MALLOC r9, "^ (string_of_int (envSize+1)) ^ ";r9 = extEnv pointer\n" ^
+	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov r9, rax ;r9 = extEnv pointer \n"  ^ (* save extEnv pointer *)
 	    "mov rbx, rbp \n" ^
 	    "add rbx, 8*3\n" ^
 	    "mov rbx, [rbx]\n"^
-	    "MALLOC rdx, rbx\n" ^ (* number of params *)
+	    "MALLOC rdx, rbx ;number of params\n" ^ 
 	    "mov r11, rdx\n"^
 	    "mov [r9], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
-	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES\n" ^ (*malloc closure  *)
+	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure\n" ^ 
 	    "mov byte [rax], T_CLOSURE\n"^
 	    "mov [rax+TYPE_SIZE], r9\n" ^
 	   	"mov qword [rax+TYPE_SIZE+WORD_BYTES], "^ lcodeLabel ^"\n" ^
@@ -370,18 +370,18 @@ let rec genCode exp deepCounter= match exp with
 
 	    and copyParams i n str = 
 	    	if i<n then
-	    		(copyParams (i+1) n (str ^ 
+	    		";copyParamsLoop:/n" ^(copyParams (i+1) n (str ^ 
 	    			"mov qword rdx, [r9]\n" ^
-	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")]\n"^ (*rbx = param(i) *)
-	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx\n" (*rdx = extEnv[0], rdx[i] = rbx *)
+	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")] ;rbx = param(i)\n"^ 
+	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx ;rdx = extEnv[0], rdx[i] = rbx \n"
 	    		))
 	    	else str 
 	    
 	    and copyEnvLoop i j envSize str = 
 	    if i < envSize then 
-	    	(copyEnvLoop (i+1) (j+1) envSize (str ^
-	    	"mov qword rdx, [rbx + "^ (string_of_int (i*8)) ^ "]\n" ^ (*go to lexical env , tmp val is in rdx*)
-	    	"mov qword [rax + "^ (string_of_int (j*8)) ^"], rdx\n")) (*check if it is + or - *)
+	    	";copyENvLoop:/n" ^ (copyEnvLoop (i+1) (j+1) envSize (str ^
+	    	"mov qword rdx, [rbx + "^ (string_of_int (i*8)) ^ "] ;go to lexical env , tmp val is in rdx\n" ^ 
+	    	"mov qword [r9 + "^ (string_of_int (j*8)) ^"], rdx\n")) (*check if it is + or - *)
 	    else
 	    	str
 
@@ -395,8 +395,8 @@ let rec genCode exp deepCounter= match exp with
 	    	(genCode proc deepCounter) ^ "\n" ^
 	    	"cmp byte [rax], T_CLOSURE\n" ^
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
-	    	"push qword [rax + TYPE_SIZE]\n" ^ (*push env*)
-	    	"call [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body, ret address is pushed*)
+	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
+	    	"call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed\n" ^
 	    	"jmp " ^ finishedApplicLabel ^ "\n" ^
 	    	notAClosureLabel ^ ":\n" ^
 	    	"\tmov rdi, notACLosureError\n" ^
