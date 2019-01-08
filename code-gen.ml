@@ -348,7 +348,7 @@ let rec genCode exp deepCounter= match exp with
 	    "MALLOC r9, "^ (string_of_int (envSize+1)) ^ ";r9 = extEnv pointer\n" ^
 	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov qword rbx, [rbp + 8*1]\n" ^
+	    "mov qword rbx, [rbp + 8*3]\n" ^
 	    "MALLOC rdx, rbx ;number of params\n" ^ 
 	    "mov [r9], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
