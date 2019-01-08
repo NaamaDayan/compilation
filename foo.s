@@ -110,6 +110,7 @@ MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
 MAKE_LITERAL_INT(1)
+MAKE_LITERAL_INT(2)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -258,7 +259,10 @@ mov rbp, rsp
  ;;ret
  
 ;applic
-push 0
+;const
+mov rax    , const_tbl + 15
+ push rax
+push 1
 ;applic
 ;const
 mov rax    , const_tbl + 6
@@ -268,13 +272,11 @@ push 1
 MALLOC r9, 1;r9 = extEnv pointer
 mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
 
-mov rbx, rbp 
-add rbx, 8*3
-mov rbx, [rbx]
+mov qword rbx, [rbp + 8*1]
 MALLOC rdx, rbx ;number of params
-mov r11, rdx
 mov [r9], rdx
-;copyParamsLoop:/nmov qword rdx, [r9]
+;copyParamsLoop:
+mov qword rdx, [r9]
 mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
 mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
 
@@ -289,15 +291,17 @@ mov rbp, rsp
 ;lambdaSimple
 MALLOC r9, 2;r9 = extEnv pointer
 mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
-;copyENvLoop:/nmov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
+;copyENvLoop:
+mov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
 mov qword [r9 + 8], rdx
 
-mov rbx, rbp 
-add rbx, 8*3
-mov rbx, [rbx]
+mov qword rbx, [rbp + 8*1]
 MALLOC rdx, rbx ;number of params
-mov r11, rdx
 mov [r9], rdx
+;copyParamsLoop:
+mov qword rdx, [r9]
+mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
+mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
 
 MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure
 mov byte [rax], T_CLOSURE

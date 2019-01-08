@@ -348,11 +348,8 @@ let rec genCode exp deepCounter= match exp with
 	    "MALLOC r9, "^ (string_of_int (envSize+1)) ^ ";r9 = extEnv pointer\n" ^
 	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov rbx, rbp \n" ^
-	    "add rbx, 8*3\n" ^
-	    "mov rbx, [rbx]\n"^
+	    "mov qword rbx, [rbp + 8*1]\n" ^
 	    "MALLOC rdx, rbx ;number of params\n" ^ 
-	    "mov r11, rdx\n"^
 	    "mov [r9], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
 	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure\n" ^ 
@@ -370,7 +367,7 @@ let rec genCode exp deepCounter= match exp with
 
 	    and copyParams i n str = 
 	    	if i<n then
-	    		";copyParamsLoop:/n" ^(copyParams (i+1) n (str ^ 
+	    		";copyParamsLoop:\n" ^(copyParams (i+1) n (str ^ 
 	    			"mov qword rdx, [r9]\n" ^
 	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")] ;rbx = param(i)\n"^ 
 	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx ;rdx = extEnv[0], rdx[i] = rbx \n"
@@ -379,7 +376,7 @@ let rec genCode exp deepCounter= match exp with
 	    
 	    and copyEnvLoop i j envSize str = 
 	    if i < envSize then 
-	    	";copyENvLoop:/n" ^ (copyEnvLoop (i+1) (j+1) envSize (str ^
+	    	";copyENvLoop:\n" ^ (copyEnvLoop (i+1) (j+1) envSize (str ^
 	    	"mov qword rdx, [rbx + "^ (string_of_int (i*8)) ^ "] ;go to lexical env , tmp val is in rdx\n" ^ 
 	    	"mov qword [r9 + "^ (string_of_int (j*8)) ^"], rdx\n")) (*check if it is + or - *)
 	    else
