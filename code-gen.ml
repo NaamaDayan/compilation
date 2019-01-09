@@ -412,6 +412,7 @@ let rec genCode exp deepCounter= match exp with
 
 	     and applicTPCodeGen proc argList deepCounter=
 	    let notAClosureLabel = (makeNumberedLabel "NotAClosureTP" !applicTPCounter) in
+	    let loopLabel = (makeNumberedLabel "Loop" !applicTPCounter) in
 	    let f argExpr acc = acc ^ ((genCode argExpr deepCounter)^"\n push rax\n") in 
 	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
 	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
@@ -431,7 +432,7 @@ let rec genCode exp deepCounter= match exp with
   			"add rax, 4\n"^
   			"mov rcx, "^(string_of_int (4+(List.length argList)))^"\n"^
   			"mov r12, 1\n"^
-  			"Loop:\n"^
+  			loopLabel ^ ":\n"^
   			"dec rax\n"^
   			"mov r8, rbp\n"^
   			"push rax\n"^
@@ -443,7 +444,7 @@ let rec genCode exp deepCounter= match exp with
  	  		"mov [rbp+WORD_BYTES*rax], r8\n"^
   			"inc r12\n"^
   			"dec rcx\n"^
-  			"je Loop\n\n"^
+  			"je " ^ loopLabel ^ "\n\n"^
 
   			";clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
   			"push rax\n"^
