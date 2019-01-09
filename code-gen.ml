@@ -299,6 +299,7 @@ let ifCounter = ref 0;;
 let applicCounter = ref 0;;
 let applicTPCounter = ref 0;;
 let lambdaCounter = ref 0;;
+let lambdaOptCounter = ref 0;;
 
 let incCounter counterRef = counterRef := !counterRef + 1 ; "";;
 
@@ -349,7 +350,7 @@ let rec genCode exp deepCounter= match exp with
 		| Applic'(proc,argList) -> ";applic\n" ^ (applicCodeGen proc argList deepCounter)
 	    | ApplicTP'(proc,params) -> ";applicTP\n" ^ (applicTPCodeGen proc params deepCounter) (*raise X_not_yet_implemented*)
 	    | LambdaSimple'(argNames,body) -> ";lambdaSimple\n" ^ (lambdaCodeGen argNames body deepCounter)
-	    | LambdaOpt'(args,option_arg,body) -> raise X_not_yet_implemented
+	    | LambdaOpt'(args,option_arg,body) ->";LambdaOpt\n" ^ (lambdaOptCodeGen (args@[option_arg]) body deepCounter)
 	    | Def'(Var'(VarFree(v)), value) -> ";define(Var'(VarFree))\n" ^ (genCode value deepCounter) ^ "\n" ^
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
 	    							   "mov rax, sob_void_label"
@@ -395,6 +396,124 @@ let rec genCode exp deepCounter= match exp with
 	    else
 	    	str
 
+	    and lambdaOptCodeGen args body envSize =
+	    let lcodeLabel = (makeNumberedLabel "LOptcode" !lambdaOptCounter) in
+	    let lcontLabel = (makeNumberedLabel "LOptcont" !lambdaOptCounter) in 
+	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
+	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
+	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
+	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
+	    "mov qword [r9], rdx\n" ^
+	    (copyParams 0 (List.length args) "") ^ "\n" ^
+	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
+	    ";mov rax, [rax]\n"^
+	    "jmp " ^ lcontLabel ^ "\n" ^
+	    lcodeLabel ^ ":\n "^
+	    (fixStack args)
+	    "push rbp\n" ^
+	    "mov rbp, rsp\n" ^
+	    (genCode body (envSize+1)) ^ "\n" ^
+	    "leave\n" ^
+	    "ret\n" ^ 
+	    lcontLabel ^ ":\n " ^ (incCounter lambdaOptCounter)
+
+
+	    and fixStack args = 
+	    let fixedParamsCount = (List.length args) in
+	    let shiftStackAndPushNil = (makeNumberedLabel "shiftStackAndPushNil" !lambdaOptCounter) in
+	   	let optToListLoop = (makeNumberedLabel "optToListLoop" !lambdaOptCounter) in
+	    let shiftStack = (makeNumberedLabel "shiftStack" !lambdaOptCounter) in
+	    let shiftStack_nil = (makeNumberedLabel "shiftStack_nil" !lambdaOptCounter) in
+	    let fixN = (makeNumberedLabel "fixN" !lambdaOptCounter) in 
+	    "
+	    ;rax = num of opt params
+	    mov rax, qword [rbp + 3*8]
+	    sub rax, "^ (string_of_int fixedParamsCount)^"
+	    cmp rax, 0
+	    je "^ shiftStackAndPushNil ^"
+
+	    ;generate opt list
+	    mov rdx, SOB_NIL_ADDRESS ; rdx = list
+	    mov rcx, rax ; rcx = num of opt params
+	    mov r9, qword [rbp + 8*3]
+	    "^ optToListLoop ^":
+	    	mov rbx, qword [rbp + 8*(r9+3)] ; rbx = OPTi
+	    	MAKE_PAIR (r10, rbx, rdx) ;r10 = Pair(rbx, rdx)
+	    	mov rdx, r10
+	    	dec r9
+	    	dec rcx
+	    	jne " ^ optToListLoop ^ "
+
+	    ;override last OPT with the opt list:"
+	    ^ (overrideLastOptWith "rdx") ^ "
+
+	    ;shift frame - shift size is (optCount - 1)
+	    push rcx
+	    push r12
+	    push r8
+	    mov rcx, 4 + "^ (string_of_int fixedParamsCount)^";rcx = frame size
+	    mov r12, 1 ; r12 = i
+	    mov r10, qword [rbp + 8*3]
+	    sub r10, -1 + " ^ (string_of_int fixedParamsCount) ^" ; r10 = optCount - 1
+	    "^ shiftStack ^ ":
+	    	mov r8, qword [rbp+r12*8]
+	       	mov [rbp+ 8*(r12 + r10)], r8
+	    	inc r12 
+	    	dec rcx
+	    	jne " ^ shiftStack ^ "
+	    pop r8
+	    pop r12
+	    pop rcx
+
+	    add rbp, r10 * 8
+	    add rsp, r10 * 8 
+
+	    jmp " ^fixN ^ "
+
+	    " ^ shiftStackAndPushNil ^ ":
+	    push rcx
+	    push r12
+	    push r8
+	    mov rcx, 4 + "^ (string_of_int fixedParamsCount)^";rcx = frame size
+	    mov r12, 1 ; r12 = i
+	    " ^ shiftStack_nil ^ ":
+	    	mov r8, qword [rbp+r12*8]
+	       	mov [rbp+ 8*r12 - 8], r8
+	    	inc r12 
+	    	dec rcx
+	    	jne " ^ shiftStack_nil ^ "
+	    pop r8
+	    pop r12
+	    pop rcx
+
+	    sub rbp, 8
+	    sub rsp, 8
+
+	    ;;push nil -- > check this!
+	    mov r8, [SOB_NIL_ADDRESS] "
+	    ^ (overrideLastOptWith "r8")^
+
+
+	    ";fix n to be fixedParamsCount + 1:
+	  	"^ fixN ^ ":
+	 	mov qword [rbp + 3*8], " ^ (string_of_int (fixedParamsCount + 1))
+	   
+
+	    and overrideLastOptWith val_ =  
+	    	"mov r9, qword [rbp + 8 *3]
+	    	add r9, 3 ;;r9 = [rbp + 3*8] + 3  = index of last opt
+	   	 	mov qword [rbp + 8*r9], "^ val_ ^"\n"
+
+(*   			(* r = [rbp +- 8*i] , sign = sub/add*)
+  		and init_register_with_rbp_val reg i sign = 
+  			"mov "^ reg^", rbp
+  			push rax
+  			mov rax, WORD_SIZE
+  			mul "^i ^"\n"^
+  			sign ^ reg ^ ", rax
+  			pop rax
+  			mov "^ reg ^", ["^reg^"] \n" *)
+  		
 
 	    and applicCodeGen proc argList deepCounter=
 	    let notAClosureLabel = (makeNumberedLabel "NotAClosure" !applicCounter) in
@@ -438,11 +557,9 @@ let rec genCode exp deepCounter= match exp with
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
 	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
 	    	"push qword [rbp + WORD_BYTES*1] ;old ret address\n" ^
-	    	";push rbp ;maybe not? (brama)\n"^ 
 	    	"mov qword r10, [rbp] ; r10 = old old rbp\n"^
 	    	"mov r11, PARAM_COUNT ; save old param count \n"^
 
-	    	(*TODO: check if this is one more iteration that it's needed*)
   			"push rax\n"^
   			"push rbx\n"^
   		  	"mov rbx, 8\n"^
