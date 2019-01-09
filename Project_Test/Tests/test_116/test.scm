@@ -1,0 +1,3 @@
+   
+                (eq? #\newline #\newline)                   ; #t
+    
