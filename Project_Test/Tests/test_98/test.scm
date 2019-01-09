@@ -1,0 +1,3 @@
+   
+                (boolean? (and))                            ; #t
+    

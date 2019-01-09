@@ -151,16 +151,30 @@ let rec findStringOffset sexprs_offset sexpr = match sexprs_offset with
 	| (Sexpr(s), index) :: tail -> if (sexpr_eq s sexpr) then index else (findStringOffset tail sexpr)
 	| head :: tail -> (findStringOffset tail sexpr);;
 
+let stringToAsciiList str = List.map (fun (ch) -> (int_of_char ch)) (string_to_list str);;
+
+let listToString lst = 
+	let rec accumFun list str = match list with 
+	| [] -> str
+	| [last] -> str ^ (string_of_int last)
+	| car :: cdr -> (accumFun cdr (str ^ (string_of_int car) ^ ", ")) in
+accumFun lst "";;
+
+let prepareString str = (listToString (stringToAsciiList str));;
+
 let rec sexpr_to_tuple sexpr offset sexprs_offset= 
 	let toTuple str = (Sexpr(sexpr),(offset, str)) in match sexpr with 
 	| Nil -> toTuple "MAKE_NIL"
-	| Char(c) -> toTuple ("MAKE_LITERAL_CHAR(\'"^(Char.escaped c)^"\')")
+	| Char(c) -> toTuple ("MAKE_LITERAL_CHAR \'"^(Char.escaped c)^"\'")
 	| Bool(b) -> if b then toTuple "MAKE_LITERAL T_BOOL, db 1" (*"MAKE_BOOL(1)"*) else toTuple "MAKE_LITERAL T_BOOL, db 0"
-	| Number(Int(a)) -> toTuple ("MAKE_LITERAL_INT("^(string_of_int a)^")")
-	| Number(Float(a)) -> toTuple ("MAKE_LITERAL_FLOAT("^(string_of_float a)^")") (*TODO:: check this!! *)
-	| String(str) -> toTuple ("MAKE_LITERAL_STRING(\""^str^"\")")
+	| Number(Int(a)) -> toTuple ("MAKE_LITERAL_INT "^(string_of_int a))
+	| Number(Float(a)) -> toTuple ("MAKE_LITERAL_FLOAT "^(string_of_float a)) (*TODO:: check this!! *)
+	| String(str) -> toTuple ("MAKE_LITERAL_STRING "^(prepareString str)^" ")
 	| Symbol(s) -> toTuple ("MAKE_LITERAL_SYMBOL(const_tbl+"^(string_of_int (findStringOffset sexprs_offset (String s)))^")")
-	| Vector(lst) -> toTuple "MAKE_LITERAL_VECTOR" (*not implemented yet*)
+	| Vector(lst) -> let f acc sexpr = acc ^ " const_tbl+" ^ (string_of_int (findStringOffset sexprs_offset sexpr)) ^ ","in
+					 let vectorString = List.fold_left f "" lst in
+					 let withoutLastComma = String.sub vectorString 0 (String.length vectorString - 1) in
+					 toTuple ("MAKE_LITERAL_VECTOR " ^ (string_of_int (List.length lst)) ^ "," ^ withoutLastComma)
 	| Pair(car, cdr) -> toTuple ("MAKE_LITERAL_PAIR(const_tbl+" ^(string_of_int (findStringOffset sexprs_offset car))^ ", const_tbl+"^(string_of_int (findStringOffset sexprs_offset cdr))^")") ;;(*not implemented yet *)
 
 let rec const_to_tuple const offset sexprs_offset = 

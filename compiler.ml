@@ -54,9 +54,21 @@ db %1
 %endmacro
 
 %macro MAKE_LITERAL_INT 1 
-MAKE_LITERAL T_INTEGER, dq %1
+	MAKE_LITERAL T_INTEGER, dq %1
 %endmacro
-%define MAKE_LITERAL_CHAR (val) MAKE_LITERAL T_CHAR, db val
+
+%macro MAKE_LITERAL_CHAR 1
+	MAKE_LITERAL T_CHAR, db %1
+%endmacro
+
+%macro MAKE_LITERAL_FLOAT 1 
+	MAKE_LITERAL T_FLOAT, dq %1
+%endmacro
+
+%macro MAKE_LITERAL_SYMBOL 1 
+	MAKE_LITERAL T_SYMBOL, dq %1
+%endmacro
+
 %define MAKE_NIL db T_NIL
 %define MAKE_VOID db T_VOID
 %define MAKE_BOOL (val) MAKE_LITERAL T_BOOL, db val
@@ -68,16 +80,14 @@ MAKE_LITERAL T_INTEGER, dq %1
 %define MAKE_FLOAT(r,val) MAKE_LONG_VALUE r, val, T_FLOAT
 %define MAKE_CHAR(r,val) MAKE_CHAR_VALUE r, val
 
-
-
-%macro MAKE_LITERAL_STRING 1
-db file_to_string
-dq (%%end_str - %%str)
-%%str:
+%macro MAKE_LITERAL_STRING 0-*
+db T_STRING
+dq %0
+%rep %0
 db %1
-%%end_str:
+%rotate 1
+%endrep
 %endmacro
-
 
 %define TYPE(r) byte [r]
 %define DATA(r) [r+TYPE_SIZE]
@@ -93,10 +103,10 @@ db %1
 
 
 %macro MAKE_LITERAL_VECTOR 0-*
-db T_VECTOR
-dq %0
+	db T_VECTOR
+	dq %0
 %rep %0
-dq %1
+	dq %1
 %rotate 1
 %endrep
 %endmacro
