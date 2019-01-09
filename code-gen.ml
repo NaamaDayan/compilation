@@ -345,17 +345,14 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    "MALLOC r9, "^ (string_of_int (envSize+1)) ^ ";r9 = extEnv pointer\n" ^
+	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
 	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "mov qword rbx, [rbp + 8*3]\n" ^
-	    "MALLOC rdx, rbx ;number of params\n" ^ 
-	    "mov [r9], rdx\n" ^
+	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
+	    "mov qword [r9], rdx\n" ^
 	    (copyParams 0 (List.length args) "") ^ "\n" ^
-	    "MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure\n" ^ 
-	    "mov byte [rax], T_CLOSURE\n"^
-	    "mov [rax+TYPE_SIZE], r9\n" ^
-	   	"mov qword [rax+TYPE_SIZE+WORD_BYTES], "^ lcodeLabel ^"\n" ^
+	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
+	    ";mov rax, [rax]\n"^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
 	    "push rbp\n" ^
@@ -390,11 +387,21 @@ let rec genCode exp deepCounter= match exp with
 	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
 	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
 	    	(genCode proc deepCounter) ^ "\n" ^
+	    	
+	    	";check if closure \n"^
 	    	"cmp byte [rax], T_CLOSURE\n" ^
-	    	"jne " ^ notAClosureLabel ^ "\n" ^
-	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
-	    	"call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed\n" ^
-	    	"jmp " ^ finishedApplicLabel ^ "\n" ^
+	    	"jne " ^ notAClosureLabel ^ "\n\n" ^
+
+	    	"push qword [rax+TYPE_SIZE]  ;push env:\n"^
+	    	"call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:\n\n"^
+	    	
+			";cleaning the stack \n"^
+			"add rsp, 8*1 ; pop env\n"^
+			"pop rbx ; pop arg count\n"^
+			"shl rbx, 3 ; rbx = rbx * 8\n"^
+			"add rsp, rbx; pop args\n"^
+	    	"jmp " ^ finishedApplicLabel ^ "\n\n" ^
+
 	    	notAClosureLabel ^ ":\n" ^
 	    	"\tmov rdi, notACLosureError\n" ^
 	    	"\tcall print_string\n" ^
@@ -411,13 +418,44 @@ let rec genCode exp deepCounter= match exp with
 	    	(genCode proc deepCounter) ^ "\n" ^
 	    	"cmp byte [rax], T_CLOSURE\n" ^
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
-	    	"push qword [rax + TYPE_SIZE]\n" ^ (*push env*)
-	    	"push qword [rbp + WORD_BYTES*1]\n" ^ (*old ret address*)
-	    	"mov qword r10, [rbp]\n"^
-	    	"mov r2, PARAM_COUNT ; save old param count \n"^
-	    	"SHIFT_FRAME 4+"^(string_of_int (List.length argList))^"\n" ^
-	    	"CLEAN_STACK r2\n"^
-	    	"mov qword [rsp], r10 ;save old old rbp\n"^
+	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
+	    	"push qword [rbp + WORD_BYTES*1] ;old ret address\n" ^ 
+	    	"mov qword r10, [rbp] ; r10 = old old rbp\n"^
+	    	"mov r11, PARAM_COUNT ; save old param count \n"^
+
+	    	(*TODO: check if this is one more iteration that it's needed*)
+  			"push rax\n"^
+  			"push rbx\n"^
+  		  	"mov rbx, 8\n"^
+  			"mov rax, PARAM_COUNT\n"^
+  			"add rax, 4\n"^
+  			"mov rcx, "^(string_of_int (4+(List.length argList)))^"\n"^
+  			"mov r12, 1\n"^
+  			"Loop:\n"^
+  			"dec rax\n"^
+  			"mov r8, rbp\n"^
+  			"push rax\n"^
+  			"mov rax, WORD_SIZE\n"^
+  			"mul r12\n"^
+  			"sub r8, rax\n"^
+  			"pop rax\n"^
+  			"mov r8, [r8]  \n"^
+ 	  		"mov [rbp+WORD_BYTES*rax], r8\n"^
+  			"inc r12\n"^
+  			"dec rcx\n"^
+  			"je Loop\n\n"^
+
+  			";clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
+  			"push rax\n"^
+  			"mov rax, WORD_SIZE\n"^
+  			"add r11, 4\n"^
+  			"mul r11\n"^
+  			"add rsp, rax\n"^
+  			"pop rax\n\n"^
+  			"pop rbx\n"^
+  			"pop rax\n"^
+
+	    	"mov qword [rsp], r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp\n"^
 	    	"jmp [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
 	    	notAClosureLabel ^ ":\n" ^
 	    	"\tmov rdi, notACLosureError\n" ^
@@ -451,7 +489,7 @@ let rec genCode exp deepCounter= match exp with
   Const' (Sexpr (Symbol "c")); Const' (Sexpr (Symbol "ab"))])]))));;
 (print_string "\n");;
 
-(* '#(1 '(5 6)) *)
+(*  '#(1 '(5 6)) *)
 (print_string (print_consts_as_list (expandConstList (make_consts_list [Const'
  (Sexpr
    (Vector
@@ -459,7 +497,7 @@ let rec genCode exp deepCounter= match exp with
       Pair (Symbol "quote",
        Pair (Pair (Number (Int 5), Pair (Number (Int 6), Nil)), Nil))]))]))));;
 (print_string "\n");;
-*)
+ *)
 
 (*
 printThreesomesList (populateConstList(expandConstList (make_consts_list  [Applic' (Var' (VarFree "list"),

@@ -87,7 +87,9 @@ dq %1
 %assign i 1
 %rep %1
   dec rax
-  mov qword r8, [rbp-WORD_BYTES*i]
+  mov r8, rbp
+  sub qword r8, WORD_BYTES*i
+  mov r8, [r8]  
   mov [rbp+WORD_BYTES*rax], r8
 % assign i i+1
 %endrep
@@ -171,7 +173,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword SOB_NIL_ADDRESS
+    push qword 0502636308 ;;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
@@ -259,87 +261,93 @@ mov rbp, rsp
  ;;ret
  
 ;applic
-;const
-mov rax    , const_tbl + 15
- push rax
-push 1
-;applic
-;const
-mov rax    , const_tbl + 6
- push rax
-push 1
+push 0
 ;lambdaSimple
-MALLOC r9, 1;r9 = extEnv pointer
+MALLOC r9, 8 ;r9 = extEnv pointer
 mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
 
-mov qword rbx, [rbp + 8*1]
-MALLOC rdx, rbx ;number of params
-mov [r9], rdx
-;copyParamsLoop:
-mov qword rdx, [r9]
-mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
-mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
+MALLOC rdx, 0 ;number of params
+mov qword [r9], rdx
 
-MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure
-mov byte [rax], T_CLOSURE
-mov [rax+TYPE_SIZE], r9
-mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode0
+MAKE_CLOSURE (rax, r9, Lcode0)
+;mov rax, [rax]
 jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-;lambdaSimple
-MALLOC r9, 2;r9 = extEnv pointer
-mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
-;copyENvLoop:
-mov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
-mov qword [r9 + 8], rdx
-
-mov qword rbx, [rbp + 8*1]
-MALLOC rdx, rbx ;number of params
-mov [r9], rdx
-;copyParamsLoop:
-mov qword rdx, [r9]
-mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
-mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
-
-MALLOC rax, TYPE_SIZE+2*WORD_BYTES ;malloc closure
-mov byte [rax], T_CLOSURE
-mov [rax+TYPE_SIZE], r9
-mov qword [rax+TYPE_SIZE+WORD_BYTES], Lcode1
-jmp Lcont1
-Lcode1:
- push rbp
-mov rbp, rsp
-;varBound
- mov rax, qword[rbp + 8*2]
-mov rax, qword [rax + 8 * 0]
-mov rax, qword [rax + 8 * 0]
-leave
-ret
-Lcont1:
- 
-leave
-ret
-Lcont0:
- 
+;applicTP
+;const
+mov rax    , const_tbl + 15
+ push rax
+;const
+mov rax    , const_tbl + 6
+ push rax
+push 2
+;varFree
+mov rax, qword [fvar_tbl+176]
 cmp byte [rax], T_CLOSURE
-jne NotAClosure1
+jne NotAClosureTP0
 push qword [rax + TYPE_SIZE] ;push env
-call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed
-jmp FinishedApplic1
-NotAClosure1:
+push qword [rbp + WORD_BYTES*1] ;old ret address
+mov qword r10, [rbp] ; r10 = old old rbp
+mov r11, PARAM_COUNT ; save old param count 
+push rax
+push rbx
+mov rbx, 8
+mov rax, PARAM_COUNT
+add rax, 4
+mov rcx, 6
+mov r12, 1
+Loop:
+dec rax
+mov r8, rbp
+push rax
+mov rax, WORD_SIZE
+mul r12
+sub r8, rax
+pop rax
+mov r8, [r8]  
+mov [rbp+WORD_BYTES*rax], r8
+inc r12
+dec rcx
+je Loop
+
+;clean stack: add rsp , WORD_BYTES*(r11+4)
+push rax
+mov rax, WORD_SIZE
+add r11, 4
+mul r11
+add rsp, rax
+pop rax
+
+pop rbx
+pop rax
+mov qword [rsp], r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
+jmp [rax + TYPE_SIZE + WORD_BYTES]
+NotAClosureTP0:
 	mov rdi, notACLosureError
 	call print_string
 	mov rax, 1
 	syscall
-FinishedApplic1:
 
+leave
+ret
+Lcont0:
+ 
+;check if closure 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0
-push qword [rax + TYPE_SIZE] ;push env
-call [rax + TYPE_SIZE + WORD_BYTES] ;call proc-body, ret address is pushed
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
 jmp FinishedApplic0
+
 NotAClosure0:
 	mov rdi, notACLosureError
 	call print_string

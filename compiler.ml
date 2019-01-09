@@ -119,7 +119,9 @@ dq %1
 %assign i 1
 %rep %1
   dec rax
-  mov qword r8, [rbp-WORD_BYTES*i]
+  mov r8, rbp
+  sub qword r8, WORD_BYTES*i
+  mov r8, [r8]  
   mov [rbp+WORD_BYTES*rax], r8
 % assign i i+1
 %endrep
@@ -166,7 +168,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword SOB_NIL_ADDRESS
+    push qword 0502636308 ;;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
