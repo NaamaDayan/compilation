@@ -297,7 +297,7 @@ let rec genCode exp deepCounter= match exp with
 	    | Var'(VarParam(_, minor)) -> ";varParam\n mov rax, qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")]"
 	    | Set'(Var'(VarParam(_, minor)), exp) -> ";set(vatParam)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
-	    										  "mov rax, SOB_VOID"
+	    										  "mov rax, sob_void_label"
 	    | Var'(VarBound(_, major, minor)) -> ";varBound\n mov rax, qword[rbp + 8*2]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int major) ^ "]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
@@ -305,11 +305,11 @@ let rec genCode exp deepCounter= match exp with
 												  "mov rbx, qword[rbp + 8*2]\n" ^
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
-	    										  "mov rax, SOB_VOID"
+	    										  "mov rax, sob_void_label"
 	    | Var'(VarFree(x)) -> ";varFree\nmov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
 	    | Set'(Var'(VarFree(v)), exp) -> ";set(Var(VarFree))\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
-	    							   "mov byte [rax], SOB_VOID"
+	    							   "mov rax, sob_void_label"
 		| Seq'(lst) -> let f acc expr = ";seq\n" ^(acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
 	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "Lexit" !orCounter) in
 	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE_ADDRESS\n jne " ^ exitLabel ^ "\n") in
@@ -336,7 +336,9 @@ let rec genCode exp deepCounter= match exp with
 	    | ApplicTP'(proc,params) -> ";applicTP\n" ^ (applicTPCodeGen proc params deepCounter) (*raise X_not_yet_implemented*)
 	    | LambdaSimple'(argNames,body) -> ";lambdaSimple\n" ^ (lambdaCodeGen argNames body deepCounter)
 	    | LambdaOpt'(args,option_arg,body) -> raise X_not_yet_implemented
-	    | Def'(var,value) -> raise X_not_yet_implemented 
+	    | Def'(Var'(VarFree(v)), value) -> ";define(Var'(VarFree))\n" ^ (genCode value deepCounter) ^ "\n" ^
+	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
+	    							   "mov rax, sob_void_label"
 	    | _ -> raise X_not_yet_implemented
 
 	    (*| Box'(variable) -> check this*) 
@@ -417,10 +419,12 @@ let rec genCode exp deepCounter= match exp with
 	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
 	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
 	    	(genCode proc deepCounter) ^ "\n" ^
+	    	"mov r13, rax ;save closure\n"^
 	    	"cmp byte [rax], T_CLOSURE\n" ^
 	    	"jne " ^ notAClosureLabel ^ "\n" ^
 	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
-	    	"push qword [rbp + WORD_BYTES*1] ;old ret address\n" ^ 
+	    	"push qword [rbp + WORD_BYTES*1] ;old ret address\n" ^
+	    	";push rbp ;maybe not? (brama)\n"^ 
 	    	"mov qword r10, [rbp] ; r10 = old old rbp\n"^
 	    	"mov r11, PARAM_COUNT ; save old param count \n"^
 
@@ -430,7 +434,7 @@ let rec genCode exp deepCounter= match exp with
   		  	"mov rbx, 8\n"^
   			"mov rax, PARAM_COUNT\n"^
   			"add rax, 4\n"^
-  			"mov rcx, "^(string_of_int (4+(List.length argList)))^"\n"^
+  			"mov rcx, "^(string_of_int (3+(List.length argList)))^"\n"^
   			"mov r12, 1\n"^
   			loopLabel ^ ":\n"^
   			"dec rax\n"^
@@ -444,7 +448,7 @@ let rec genCode exp deepCounter= match exp with
  	  		"mov [rbp+WORD_BYTES*rax], r8\n"^
   			"inc r12\n"^
   			"dec rcx\n"^
-  			"je " ^ loopLabel ^ "\n\n"^
+  			"jne " ^ loopLabel ^ "\n\n"^
 
   			";clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
   			"push rax\n"^
@@ -456,8 +460,8 @@ let rec genCode exp deepCounter= match exp with
   			"pop rbx\n"^
   			"pop rax\n"^
 
-	    	"mov qword [rsp], r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp\n"^
-	    	"jmp [rax + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
+	    	"mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp\n"^
+	    	"jmp [r13 + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
 	    	notAClosureLabel ^ ":\n" ^
 	    	"\tmov rdi, notACLosureError\n" ^
 	    	"\tcall print_string\n" ^

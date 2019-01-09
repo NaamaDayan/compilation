@@ -12,6 +12,8 @@ section .data
 
 
 ;;macros we added:
+sob_void_label: dq SOB_VOID ;;to use n set and define
+
 %define WORD_BYTES 8
 
 
@@ -112,7 +114,6 @@ MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
 MAKE_LITERAL_INT(1)
-MAKE_LITERAL_INT(2)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -124,6 +125,7 @@ MAKE_LITERAL_INT(2)
 
 
 fvar_tbl:
+dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -173,7 +175,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 0502636308 ;;SOB_NIL_ADDRESS
+    push qword 7 ;;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
@@ -260,8 +262,7 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
-;applic
-push 0
+;define(Var'(VarFree))
 ;lambdaSimple
 MALLOC r9, 8 ;r9 = extEnv pointer
 mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
@@ -275,65 +276,21 @@ jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-;applicTP
-;const
-mov rax    , const_tbl + 15
- push rax
 ;const
 mov rax    , const_tbl + 6
- push rax
-push 2
-;varFree
-mov rax, qword [fvar_tbl+176]
-cmp byte [rax], T_CLOSURE
-jne NotAClosureTP0
-push qword [rax + TYPE_SIZE] ;push env
-push qword [rbp + WORD_BYTES*1] ;old ret address
-mov qword r10, [rbp] ; r10 = old old rbp
-mov r11, PARAM_COUNT ; save old param count 
-push rax
-push rbx
-mov rbx, 8
-mov rax, PARAM_COUNT
-add rax, 4
-mov rcx, 6
-mov r12, 1
-Loop:
-dec rax
-mov r8, rbp
-push rax
-mov rax, WORD_SIZE
-mul r12
-sub r8, rax
-pop rax
-mov r8, [r8]  
-mov [rbp+WORD_BYTES*rax], r8
-inc r12
-dec rcx
-je Loop
-
-;clean stack: add rsp , WORD_BYTES*(r11+4)
-push rax
-mov rax, WORD_SIZE
-add r11, 4
-mul r11
-add rsp, rax
-pop rax
-
-pop rbx
-pop rax
-mov qword [rsp], r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
-jmp [rax + TYPE_SIZE + WORD_BYTES]
-NotAClosureTP0:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-
 leave
 ret
 Lcont0:
  
+mov qword [fvar_tbl+264], rax
+mov rax, sob_void_label
+    call write_sob_if_not_void
+
+
+;applic
+push 0
+;varFree
+mov rax, qword [fvar_tbl+264]
 ;check if closure 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0

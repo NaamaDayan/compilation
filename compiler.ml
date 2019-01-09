@@ -44,6 +44,8 @@ section .data
 
 
 ;;macros we added:
+sob_void_label: dq SOB_VOID ;;to use n set and define
+
 %define WORD_BYTES 8
 
 
@@ -168,7 +170,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 0502636308 ;;SOB_NIL_ADDRESS
+    push qword 7 ;;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
