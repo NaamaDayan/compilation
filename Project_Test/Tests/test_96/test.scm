@@ -1,3 +1,3 @@
    
-                (boolean? (and 1 2))                        ; #f
+                (make-vector 7)                             ; #(0 0 0 0 0 0 0)
     

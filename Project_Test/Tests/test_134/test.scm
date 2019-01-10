@@ -1,3 +1,3 @@
    
-                (make-vector 7)                             ; #(0 0 0 0 0 0 0)
+                (vector 'vector 'vector)                      ; #(vector vector)
     

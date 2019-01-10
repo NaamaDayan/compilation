@@ -1,3 +1,3 @@
    
-                (boolean? (and #f #f))                      ; #t
+                (make-vector 2 "scheme")
     

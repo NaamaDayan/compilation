@@ -1,3 +1,3 @@
    
-                (eq? #\newline #\newline)                   ; #t
+                (procedure? #t)
     

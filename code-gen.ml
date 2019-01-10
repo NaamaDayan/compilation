@@ -165,16 +165,15 @@ let prepareString str = (listToString (stringToAsciiList str));;
 let rec sexpr_to_tuple sexpr offset sexprs_offset= 
 	let toTuple str = (Sexpr(sexpr),(offset, str)) in match sexpr with 
 	| Nil -> toTuple "MAKE_NIL"
-	| Char(c) -> toTuple ("MAKE_LITERAL_CHAR \'"^(Char.escaped c)^"\'")
+	| Char(c) -> toTuple ("MAKE_LITERAL_CHAR "^(string_of_int ((int_of_char c))))
 	| Bool(b) -> if b then toTuple "MAKE_LITERAL T_BOOL, db 1" (*"MAKE_BOOL(1)"*) else toTuple "MAKE_LITERAL T_BOOL, db 0"
 	| Number(Int(a)) -> toTuple ("MAKE_LITERAL_INT "^(string_of_int a))
 	| Number(Float(a)) -> toTuple ("MAKE_LITERAL_FLOAT "^(string_of_float a)) (*TODO:: check this!! *)
 	| String(str) -> toTuple ("MAKE_LITERAL_STRING "^(prepareString str)^" ")
 	| Symbol(s) -> toTuple ("MAKE_LITERAL_SYMBOL(const_tbl+"^(string_of_int (findStringOffset sexprs_offset (String s)))^")")
-	| Vector(lst) -> let f acc sexpr = acc ^ " const_tbl+" ^ (string_of_int (findStringOffset sexprs_offset sexpr)) ^ ","in
+	| Vector(lst) -> let f acc sexpr = acc ^ "dq const_tbl+" ^ (string_of_int (findStringOffset sexprs_offset sexpr)) ^ "\n" in
 					 let vectorString = List.fold_left f "" lst in
-					 let withoutLastComma = String.sub vectorString 0 (String.length vectorString - 1) in
-					 toTuple ("MAKE_LITERAL_VECTOR " ^ (string_of_int (List.length lst)) ^ "," ^ withoutLastComma)
+					 toTuple ("db T_VECTOR\n dq " ^ (string_of_int (List.length lst)) ^ "\n" ^ vectorString)
 	| Pair(car, cdr) -> toTuple ("MAKE_LITERAL_PAIR(const_tbl+" ^(string_of_int (findStringOffset sexprs_offset car))^ ", const_tbl+"^(string_of_int (findStringOffset sexprs_offset cdr))^")") ;;(*not implemented yet *)
 
 let rec const_to_tuple const offset sexprs_offset = 
@@ -312,7 +311,7 @@ let rec genCode exp deepCounter= match exp with
 	    | Var'(VarParam(_, minor)) -> ";varParam\n mov rax, qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")]"
 	    | Set'(Var'(VarParam(_, minor)), exp) -> ";set(vatParam)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
-	    										  "mov rax, sob_void_label"
+	    										  "mov rax, SOB_VOID_ADDRESS"
 	    | Var'(VarBound(_, major, minor)) -> ";varBound\n mov rax, qword[rbp + 8*2]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int major) ^ "]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
@@ -320,11 +319,11 @@ let rec genCode exp deepCounter= match exp with
 												  "mov rbx, qword[rbp + 8*2]\n" ^
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
-	    										  "mov rax, sob_void_label"
+	    										  "mov rax, SOB_VOID_ADDRESS"
 	    | Var'(VarFree(x)) -> ";varFree\nmov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
 	    | Set'(Var'(VarFree(v)), exp) -> ";set(Var(VarFree))\n" ^ (genCode exp deepCounter) ^ "\n" ^
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
-	    							   "mov rax, sob_void_label"
+	    							   "mov rax, SOB_VOID_ADDRESS"
 		| Seq'(lst) -> let f acc expr = ";seq\n" ^(acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
 	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "Lexit" !orCounter) in
 	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE_ADDRESS\n jne " ^ exitLabel ^ "\n") in
@@ -353,10 +352,15 @@ let rec genCode exp deepCounter= match exp with
 	    | LambdaOpt'(args,option_arg,body) ->";LambdaOpt\n" ^ (lambdaOptCodeGen (args@[option_arg]) body deepCounter)
 	    | Def'(Var'(VarFree(v)), value) -> ";define(Var'(VarFree))\n" ^ (genCode value deepCounter) ^ "\n" ^
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
-	    							   "mov rax, sob_void_label"
+	    							   "mov rax, SOB_VOID_ADDRESS"
+	 	| Box'(variable) -> ";Box(var)\n" ^ 
+	 						(genCode (Var'(variable)) deepCounter) ^ "\n" ^
+	 						"push rbx\n" ^ 
+	 						"MALLOC rbx, WORD_BYTES\n" ^
+	 						"mov [rbx], rax\n" ^
+	 						"mov rax, rbx\n" ^
+	 						"pop rbx"
 	    | _ -> raise X_not_yet_implemented
-
-	    (*| Box'(variable) -> check this*) 
 	    
 
 	    and lambdaCodeGen args body envSize =

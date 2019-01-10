@@ -10,11 +10,7 @@ malloc_pointer:
 
 section .data
 
-
-;;macros we added:
 %define WORD_BYTES 8
-
-
 
 %macro MAKE_LITERAL 2
 db %1
@@ -69,16 +65,6 @@ db %1
 %define STR_DATA_PTR(r) r + WORD_BYTES+ TYPE_SIZE
 %define STRING_REF(r,i) byte [r+WORD_BYTES+ TYPE_SIZE + i]
 
-
-%macro MAKE_LITERAL_VECTOR 0-*
-	db T_VECTOR
-	dq %0
-%rep %0
-	dq %1
-%rotate 1
-%endrep
-%endmacro
-
 %define LOWER_DATA(sob) qword [sob+ TYPE_SIZE]
 %define UPPER_DATA(sob) qword [sob+WORD_BYTES +TYPE_SIZE]
 %define CAR LOWER_DATA
@@ -121,14 +107,14 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_FLOAT 5.5
+MAKE_LITERAL_INT 1
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
-%define SOB_VOID_ADDRESS 0
-%define SOB_NIL_ADDRESS 1
-%define SOB_FALSE_ADDRESS 4
-%define SOB_TRUE_ADDRESS 2
+%define SOB_VOID_ADDRESS const_tbl+0
+%define SOB_NIL_ADDRESS const_tbl+1
+%define SOB_FALSE_ADDRESS const_tbl+2
+%define SOB_TRUE_ADDRESS const_tbl+4
 
 
 
@@ -182,7 +168,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 0502636308 ;;SOB_NIL_ADDRESS
+    push qword 7 ;;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
@@ -269,8 +255,141 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
+ forDebug:
+;applic
+;const
+mov rax    , const_tbl + 4
+ push rax
+;const
+mov rax    , const_tbl + 2
+ push rax
+push 2
+;lambdaSimple
+MALLOC r9, 8 ;r9 = extEnv pointer
+mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
+
+MALLOC rdx, 16 ;number of params
+mov qword [r9], rdx
+;copyParamsLoop:
+;copyParamsLoop:
+mov qword rdx, [r9]
+mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
+mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
+mov qword rdx, [r9]
+mov rbx, [rbp + 8*(4 + 8)] ;rbx = param(i)
+mov [rdx + 8], rbx ;rdx = extEnv[0], rdx[i] = rbx 
+
+MAKE_CLOSURE (rax, r9, Lcode0)
+;mov rax, [rax]
+jmp Lcont0
+Lcode0:
+ push rbp
+mov rbp, rsp
+;applicTP
 ;const
 mov rax    , const_tbl + 6
+ push rax
+push 1
+;lambdaSimple
+MALLOC r9, 16 ;r9 = extEnv pointer
+mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
+;copyENvLoop:
+mov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
+mov qword [r9 + 8], rdx
+
+MALLOC rdx, 8 ;number of params
+mov qword [r9], rdx
+;copyParamsLoop:
+mov qword rdx, [r9]
+mov rbx, [rbp + 8*(4 + 0)] ;rbx = param(i)
+mov [rdx + 0], rbx ;rdx = extEnv[0], rdx[i] = rbx 
+
+MAKE_CLOSURE (rax, r9, Lcode1)
+;mov rax, [rax]
+jmp Lcont1
+Lcode1:
+ push rbp
+mov rbp, rsp
+;varBound
+ mov rax, qword[rbp + 8*2]
+mov rax, qword [rax + 8 * 0]
+mov rax, qword [rax + 8 * 1]
+leave
+ret
+Lcont1:
+ 
+mov r13, rax ;save closure
+cmp byte [rax], T_CLOSURE
+jne NotAClosureTP0
+push qword [rax + TYPE_SIZE] ;push env
+push qword [rbp + WORD_BYTES*1] ;old ret address
+;push rbp ;maybe not? (brama)
+mov qword r10, [rbp] ; r10 = old old rbp
+mov r11, PARAM_COUNT ; save old param count 
+push rax
+push rbx
+mov rbx, 8
+mov rax, PARAM_COUNT
+add rax, 4
+mov rcx, 4
+mov r12, 1
+Loop0:
+dec rax
+mov r8, rbp
+push rax
+mov rax, WORD_SIZE
+mul r12
+sub r8, rax
+pop rax
+mov r8, [r8]  
+mov [rbp+WORD_BYTES*rax], r8
+inc r12
+dec rcx
+jne Loop0
+
+;clean stack: add rsp , WORD_BYTES*(r11+4)
+push rax
+mov rax, WORD_SIZE
+add r11, 4
+mul r11
+add rsp, rax
+pop rax
+
+pop rbx
+pop rax
+mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
+jmp [r13 + TYPE_SIZE + WORD_BYTES]
+NotAClosureTP0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+
+leave
+ret
+Lcont0:
+ 
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure0
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic0
+
+NotAClosure0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic0:
+
     call write_sob_if_not_void
 leave
  ret
@@ -1219,12 +1338,12 @@ set_cdr:
     ;ret
     
 cons:
-    ;push rbp
-    ;mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;mov rdi, PVAR(1)
-    ;MAKE_PAIR rax, rsi, rdi ;todo: check if need to be [rsi], [rdi]
-    ;;make_pair puts the result in rax
-    ;leave
-    ;ret
+    mov rsi, PVAR(0) 
+    mov rdi, PVAR(1)
+    MAKE_PAIR (rax, rsi, rdi) ;todo: check if need to be [rsi], [rdi]
+    ;make_pair puts the result in rax
+    leave
+    ret

@@ -1,3 +1,3 @@
    
-                (integer? cons)
+                (string-ref "string" 1)
     

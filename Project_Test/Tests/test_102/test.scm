@@ -1,3 +1,3 @@
    
-                (char->integer #\A)                         ; 65
+                (not #f)                                    ; #t
     

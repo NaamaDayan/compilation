@@ -1,3 +1,3 @@
    
-                (= 1 2)                                     ; #f
+                (boolean? (if #f #f #f))                    ; #t
     

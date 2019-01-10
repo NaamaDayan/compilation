@@ -1,3 +1,3 @@
    
-                (char? #\newline)                           ; #t
+                (null? '(9 #\F))                            ; #f
     

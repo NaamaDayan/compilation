@@ -1,3 +1,3 @@
    
-             '('''a)                                   ; quote madness    
+                (< 3 2)                                     ; #f
     

@@ -1,3 +1,3 @@
    
-                (eq? -1 -1)                                 ; #t
+                (set-car! '(a b c) '(x y z))
     

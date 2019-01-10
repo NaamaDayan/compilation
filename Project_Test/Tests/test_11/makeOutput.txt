@@ -1,6 +1,0 @@
-make[1]: Entering directory '/home/shahar/compiler'
-cd /home/shahar/compiler/ && ocaml compiler.ml /home/shahar/compiler/Project_Test/Tests/test_11/test.scm > Project_Test/Tests/test_11/test.s && nasm -g -f elf64 -o Project_Test/Tests/test_11/test.o Project_Test/Tests/test_11/test.s && gcc -static -m64 -o Project_Test/Tests/test_11/test Project_Test/Tests/test_11/test.o && mv Project_Test/Tests/test_11/test /home/shahar/compiler
-Exception: X_missing_input_file.
-Makefile:7: recipe for target 'Project_Test/Tests/test_11/test' failed
-make[1]: *** [Project_Test/Tests/test_11/test] Error 2
-make[1]: Leaving directory '/home/shahar/compiler'

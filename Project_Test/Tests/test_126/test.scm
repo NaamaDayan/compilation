@@ -1,3 +1,3 @@
    
-               (integer->char 10)                          ; #\newline 
+               (string-set! "string" 1 #\p) 
     

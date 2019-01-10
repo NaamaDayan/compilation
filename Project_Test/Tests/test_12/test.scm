@@ -1,1 +1,3 @@
-((lambda (x y z w g) g)1 2 3 4 5)
+   
+                (define tail_test (lambda (n1) ((lambda (n2 n3) (+ n1 n3)) 10 15))) (tail_test 1)                               ; 16
+    

@@ -3,7 +3,7 @@
  ;Scheme Output:
 '(
 
-5
+#t
 
 
 ) 
@@ -15,7 +15,7 @@
 ;Yours Output:
 '(
 
-5
+#t
 
 
 )
