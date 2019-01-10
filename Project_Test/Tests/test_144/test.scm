@@ -1,3 +1,0 @@
-   
-                (eq? '#(vector) '#(list))
-    

@@ -1,3 +1,3 @@
    
-                (/ 4 2)                                     ; 2
+                (vector 'vector 'vector)                      ; #(vector vector)
     

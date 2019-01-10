@@ -299,6 +299,7 @@ let applicCounter = ref 0;;
 let applicTPCounter = ref 0;;
 let lambdaCounter = ref 0;;
 let lambdaOptCounter = ref 0;;
+let copyParamsCounter = ref 0;;
 
 let incCounter counterRef = counterRef := !counterRef + 1 ; "";;
 
@@ -313,11 +314,11 @@ let rec genCode exp deepCounter= match exp with
 	    										  "mov qword [rbp + 8*(4 + " ^ (string_of_int minor) ^ ")], rax\n" ^
 	    										  "mov rax, SOB_VOID_ADDRESS"
 	    | Var'(VarBound(_, major, minor)) -> ";varBound\n mov rax, qword[rbp + 8*2]\n" ^
-	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int major) ^ "]\n" ^
+	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int (major)) ^ "]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
 		| Set'(Var'(VarBound(_, major, minor)), exp) ->";set(VarBound)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 												  "mov rbx, qword[rbp + 8*2]\n" ^
-												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int major) ^ "]\n" ^
+												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int (major)) ^ "]\n" ^
 												  "mov qword [rbx + 8 * " ^ (string_of_int minor) ^ "], rax\n" ^
 	    										  "mov rax, SOB_VOID_ADDRESS"
 	    | Var'(VarFree(x)) -> ";varFree\nmov rax, qword [fvar_tbl+" ^ (fvar_address x fvars) ^ "]" (*todo: check this????*)
@@ -345,7 +346,7 @@ let rec genCode exp deepCounter= match exp with
 	    							"push rax\n" ^
 	    							(genCode (Var' v) deepCounter) ^ "\n" ^
 	    							"pop qword [rax]\n" ^
-	    							"mov rax, SOB_VOID"
+	    							"mov rax, SOB_VOID_ADDRESS"
 		| Applic'(proc,argList) -> ";applic\n" ^ (applicCodeGen proc argList deepCounter)
 	    | ApplicTP'(proc,params) -> ";applicTP\n" ^ (applicTPCodeGen proc params deepCounter) (*raise X_not_yet_implemented*)
 	    | LambdaSimple'(argNames,body) -> ";lambdaSimple\n" ^ (lambdaCodeGen argNames body deepCounter)
@@ -362,18 +363,20 @@ let rec genCode exp deepCounter= match exp with
 	 						"pop rbx"
 	    | _ -> raise X_not_yet_implemented
 	    
-
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
-	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
-	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
-	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
-	    "mov qword [r9], rdx\n" ^
-	    (copyParams 0 (List.length args) "") ^ "\n" ^
-	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
-	    ";mov rax, [rax]\n"^
+	    let envHandling =  
+	    	if (envSize == 0) then "MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, "^lcodeLabel^")\n"
+	    	else "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
+	    		 "mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer\n" ^
+	    		 (copyEnvLoop 0 envSize "") ^ "\n" ^ 
+	    		 "mov r13, qword [rbp+8*3] \n"^
+	    		 "MALLOC rdx, r13 ;number of params of prev env * 8\n" ^ 
+	    		 "mov qword [r9], rdx\n ;rdx is the params vector\n" ^
+	    		 (copyParams) ^ "\n" ^
+	    		 "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n" in
+	    envHandling ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
 	    "push rbp\n" ^
@@ -383,32 +386,60 @@ let rec genCode exp deepCounter= match exp with
 	    "ret\n" ^ 
 	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
 
-	    and copyParams i n str = 
-	    	if i<n then
-	    		";copyParamsLoop:\n" ^(copyParams (i+1) n (str ^ 
-	    			"mov qword rdx, [r9]\n" ^
-	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")] ;rbx = param(i)\n"^ 
-	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx ;rdx = extEnv[0], rdx[i] = rbx \n"
-	    		))
-	    	else str 
+	    and copyParams  = 
+	    	let copyParamsLoop = (makeNumberedLabel "copyParamsLoop" !copyParamsCounter) in
+	       "mov rcx, qword [rbp+3*8] ; rcx = param count
+	    	mov r12, 0 ; r12 = i 
+	       "^copyParamsLoop ^ ":
+	    		mov r13, r12
+	    		add r13, 4
+	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
+	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
+	    		inc r12
+	    		dec rcx
+	    		jne " ^copyParamsLoop ^  (incCounter copyParamsCounter)
+
+	  (*  and lambdaCodeGen args body envSize =
+	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
+	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
+	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
+	    "mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer\n" ^
+	    (copyEnvLoop 0 envSize "") ^ "\n" ^ 
+	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params * 8\n" ^ 
+	    "mov qword [r9], rdx\n ;rdx is the params vector\n" ^
+	    (copyParams (List.length args)) ^ "\n" ^
+	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
+	    "jmp " ^ lcontLabel ^ "\n" ^
+	    lcodeLabel ^ ":\n "^
+	    "push rbp\n" ^
+	    "mov rbp, rsp\n" ^
+	    (genCode body (envSize+1)) ^ "\n" ^
+	    "leave\n" ^
+	    "ret\n" ^ 
+	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
+	*)
+		
+	 
 	    
-	    and copyEnvLoop i j envSize str = 
+	    (*r9[i+1] = rbx[i]*)
+	    and copyEnvLoop i envSize str = 
 	    if i < envSize then 
-	    	";copyENvLoop:\n" ^ (copyEnvLoop (i+1) (j+1) envSize (str ^
+	    	";copyEnvLoop - r9[i+1] = rbx[i]:\n" ^ (copyEnvLoop (i+1) envSize (
 	    	"mov qword rdx, [rbx + "^ (string_of_int (i*8)) ^ "] ;go to lexical env , tmp val is in rdx\n" ^ 
-	    	"mov qword [r9 + "^ (string_of_int (j*8)) ^"], rdx\n")) (*check if it is + or - *)
+ 			"mov qword [r9 + "^ (string_of_int ((i+1)*8)) ^"], rdx\n" ^ str)) 
+
 	    else
 	    	str
 
 	    and lambdaOptCodeGen args body envSize =
-	    let lcodeLabel = (makeNumberedLabel "LOptcode" !lambdaOptCounter) in
-	    let lcontLabel = (makeNumberedLabel "LOptcont" !lambdaOptCounter) in 
+	    let lcodeLabel = (makeNumberedLabel "Loptcode" !lambdaOptCounter) in
+	    let lcontLabel = (makeNumberedLabel "Loptcont" !lambdaOptCounter) in 
 	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
 	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
-	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
+	    (copyEnvLoop 0 envSize "") ^ "\n" ^ 
 	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
 	    "mov qword [r9], rdx\n" ^
-	    (copyParams 0 (List.length args) "") ^ "\n" ^
+	    (copyParams ) ^ "\n" ^
 	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
 	    ";mov rax, [rax]\n"^
 	    "jmp " ^ lcontLabel ^ "\n" ^

@@ -1,3 +1,3 @@
    
-                 (or)                                      ; or without sub-expressions
+                (eq? '#(vector) '#(list))
     

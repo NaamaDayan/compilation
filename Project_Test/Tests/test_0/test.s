@@ -107,6 +107,7 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
+MAKE_LITERAL_INT 85
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -167,7 +168,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 7 ;;SOB_NIL_ADDRESS
+    push qword 7 ;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
@@ -255,6 +256,45 @@ mov rbp, rsp
  ;;ret
  
  forDebug:
+;applic
+;const
+mov rax    , const_tbl + 6
+ push rax
+push 1
+;lambdaSimple
+MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
+jmp Lcont0
+Lcode0:
+ push rbp
+mov rbp, rsp
+;varParam
+ mov rax, qword [rbp + 8*(4 + 0)]
+leave
+ret
+Lcont0:
+ 
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure0
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic0
+
+NotAClosure0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic0:
+
+    call write_sob_if_not_void
 leave
  ret
 is_boolean:

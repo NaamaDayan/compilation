@@ -1,1 +1,3 @@
-(define pro 10) pro pro pro(define tail 5) tail pro
+   
+                 ((lambda (a b c) ((lambda (e f) ((lambda (x y z) x) e f a)) a b)) 1 2 3)  ; tail position application - check the the env expansion works properly, should return 1
+    

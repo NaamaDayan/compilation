@@ -1,3 +1,0 @@
-   
-                (number? "hello, world!")
-    

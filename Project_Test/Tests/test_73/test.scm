@@ -1,3 +1,3 @@
    
-                (< 11)                                      ; #t
+                (pair? '())                                 ; excpetion - wrong number of arguments
     

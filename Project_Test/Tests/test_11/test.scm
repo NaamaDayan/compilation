@@ -1,0 +1,3 @@
+   
+              "string"                                 ; simple string  
+    

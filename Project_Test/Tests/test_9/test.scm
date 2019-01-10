@@ -1,1 +1,3 @@
-'(55 4.4 "gotcha" #t #f #\tab) #f #t " hfdgfdgdf454 fgfd" 'dfdsfdsfds
+   
+            '("A")                                    ; vector with string - should remain a capital A and not a lowercase a    
+    
