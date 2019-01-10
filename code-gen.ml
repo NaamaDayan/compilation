@@ -299,6 +299,7 @@ let applicCounter = ref 0;;
 let applicTPCounter = ref 0;;
 let lambdaCounter = ref 0;;
 let lambdaOptCounter = ref 0;;
+let copyParamsCounter = ref 0 ;;
 
 let incCounter counterRef = counterRef := !counterRef + 1 ; "";;
 
@@ -371,7 +372,7 @@ let rec genCode exp deepCounter= match exp with
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
 	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
 	    "mov qword [r9], rdx\n" ^
-	    (copyParams 0 (List.length args) "") ^ "\n" ^
+	    (copyParams) ^ "\n" ^
 	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
 	    ";mov rax, [rax]\n"^
 	    "jmp " ^ lcontLabel ^ "\n" ^
@@ -383,14 +384,20 @@ let rec genCode exp deepCounter= match exp with
 	    "ret\n" ^ 
 	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
 
-	    and copyParams i n str = 
-	    	if i<n then
-	    		";copyParamsLoop:\n" ^(copyParams (i+1) n (str ^ 
-	    			"mov qword rdx, [r9]\n" ^
-	    			"mov rbx, [rbp + 8*(4 + "^ (string_of_int (i*8)) ^ ")] ;rbx = param(i)\n"^ 
-	    			"mov [rdx + " ^ (string_of_int (i*8)) ^ "], rbx ;rdx = extEnv[0], rdx[i] = rbx \n"
-	    		))
-	    	else str 
+	    and copyParams  = 
+	    	let copyParamsLoop = (makeNumberedLabel "copyParamsLoop" !copyParamsCounter) in
+	       "mov rcx, qword [rsp] ; rcx = fixedParamsCount, rsp = num of args???
+	    	mov r12, 0 ; r12 = i 
+	       "^copyParamsLoop ^ ":
+	    		mov qword rdx, [r9]
+	    		mov r13, r12
+	    		add r13, 4
+	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
+	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
+	    		inc r12
+	    		dec rcx
+	    		jne " ^copyParamsLoop ^  (incCounter copyParamsCounter)
+	    	
 	    
 	    and copyEnvLoop i j envSize str = 
 	    if i < envSize then 
@@ -408,14 +415,16 @@ let rec genCode exp deepCounter= match exp with
 	    (copyEnvLoop 0 1 envSize "") ^ "\n" ^ 
 	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
 	    "mov qword [r9], rdx\n" ^
-	    (copyParams 0 (List.length args) "") ^ "\n" ^
+	    (copyParams) ^ "\n" ^
 	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
 	    ";mov rax, [rax]\n"^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
+	    "push rbp ;;check this!!!! this is just a try! was after fix stack before!
+	    mov rbp, rsp\n" ^
 	    (fixStack args) ^
-	    "push rbp\n" ^
-	    "mov rbp, rsp\n" ^
+	    ";;;;;;push rbp\n" ^
+	    ";;;;;;mov rbp, rsp\n" ^
 	    (genCode body (envSize+1)) ^ "\n" ^
 	    "leave\n" ^
 	    "ret\n" ^ 
@@ -423,11 +432,11 @@ let rec genCode exp deepCounter= match exp with
 
 
 	    and fixStack args = 
-	    let fixedParamsCount = (List.length args) in
+	    let fixedParamsCount = (List.length args) - 1 in
 	    let shiftStackAndPushNil = (makeNumberedLabel "shiftStackAndPushNil" !lambdaOptCounter) in
 	   	let optToListLoop = (makeNumberedLabel "optToListLoop" !lambdaOptCounter) in
 	    let shiftStack = (makeNumberedLabel "shiftStack" !lambdaOptCounter) in
-	    let shiftStack_nil = (makeNumberedLabel "shiftStack_nil" !lambdaOptCounter) in
+	    let shiftStack_nil = (makeNumberedLabel "shiftStackNil" !lambdaOptCounter) in
 	    let fixN = (makeNumberedLabel "fixN" !lambdaOptCounter) in 
 	    "
 	    ;rax = num of opt params
@@ -448,29 +457,26 @@ let rec genCode exp deepCounter= match exp with
 	    	dec rcx
 	    	jne " ^ optToListLoop ^ "
 
-	    ;override last OPT with the opt list:"
-	    ^ (overrideLastOptWith "rdx") ^ "
+	    ;override last OPT with the opt list
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 3 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	   	mov qword [rbp + 8*r9], rdx
 
 	    ;shift frame - shift size is (optCount - 1)
-	    push rcx
-	    push r12
-	    push r8
 	    mov rcx, 4 + "^ (string_of_int fixedParamsCount)^";rcx = frame size
-	    mov r12, 1 ; r12 = i
+	    mov r12, rcx
+	    dec r12 ; r12 = index of last opt in stack
 	    mov r10, qword [rbp + 8*3]
-	    sub r10, -1 + " ^ (string_of_int fixedParamsCount) ^" ; r10 = optCount - 1
+	    sub r10, 1 + " ^ (string_of_int fixedParamsCount) ^" ; r10 = optCount - 1
 	    "^ shiftStack ^ ":
 	    	mov r8, qword [rbp+r12*8]
-	    	push r12
-	    	add r12 , r10
-	       	mov [rbp+ 8*r12], r8
-	       	pop r12
-	    	inc r12 
+	    	mov r13, r12
+	    	add r13 , r10
+	       	mov [rbp+ 8*r13], r8
+	    	dec r12 
 	    	dec rcx
 	    	jne " ^ shiftStack ^ "
-	    pop r8
-	    pop r12
-	    pop rcx
+
 
 	    mov rax, r10
 	    mov rbx, 8
@@ -481,38 +487,30 @@ let rec genCode exp deepCounter= match exp with
 	    jmp " ^fixN ^ "
 
 	    " ^ shiftStackAndPushNil ^ ":
-	    push rcx
-	    push r12
-	    push r8
 	    mov rcx, 4 + "^ (string_of_int fixedParamsCount)^";rcx = frame size
-	    mov r12, 1 ; r12 = i
+	    mov r12, 0 ; r12 = i
 	    " ^ shiftStack_nil ^ ":
 	    	mov r8, qword [rbp+r12*8]
 	       	mov [rbp+ 8*r12 - 8], r8
 	    	inc r12 
 	    	dec rcx
 	    	jne " ^ shiftStack_nil ^ "
-	    pop r8
-	    pop r12
-	    pop rcx
 
 	    sub rbp, 8
 	    sub rsp, 8
 
 	    ;;push nil -- > check this!
-	    mov r8, [SOB_NIL_ADDRESS] \n"
-	    ^ (overrideLastOptWith "r8")^
+	    mov r8, [SOB_NIL_ADDRESS]
 
+	    ;override value *after* last opt with 
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 4 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	   	mov qword [rbp + 8*r9], r8
 
-	    ";fix n to be fixedParamsCount + 1:
+	    ;fix n to be fixedParamsCount + 1:
 	  	"^ fixN ^ ":
 	 	mov qword [rbp + 3*8], " ^ (string_of_int (fixedParamsCount + 1)) ^ "\n"
 	   
-
-	    and overrideLastOptWith val_ =  
-	    	"mov r9, qword [rbp + 8 *3]
-	    	add r9, 3 ;;r9 = [rbp + 3*8] + 3  = index of last opt
-	   	 	mov qword [rbp + 8*r9], "^ val_ ^"\n"
 
 (*   			(* r = [rbp +- 8*i] , sign = sub/add*)
   		and init_register_with_rbp_val reg i sign = 

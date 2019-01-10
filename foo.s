@@ -10,13 +10,7 @@ malloc_pointer:
 
 section .data
 
-
-;;macros we added:
-sob_void_label: dq SOB_VOID ;;to use n set and define
-
 %define WORD_BYTES 8
-
-
 
 %macro MAKE_LITERAL 2
 db %1
@@ -71,16 +65,6 @@ db %1
 %define STR_DATA_PTR(r) r + WORD_BYTES+ TYPE_SIZE
 %define STRING_REF(r,i) byte [r+WORD_BYTES+ TYPE_SIZE + i]
 
-
-%macro MAKE_LITERAL_VECTOR 0-*
-	db T_VECTOR
-	dq %0
-%rep %0
-	dq %1
-%rotate 1
-%endrep
-%endmacro
-
 %define LOWER_DATA(sob) qword [sob+ TYPE_SIZE]
 %define UPPER_DATA(sob) qword [sob+WORD_BYTES +TYPE_SIZE]
 %define CAR LOWER_DATA
@@ -123,14 +107,16 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 1
+MAKE_LITERAL_INT 5
+MAKE_LITERAL_INT 2
+MAKE_LITERAL_INT 3
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
-%define SOB_VOID_ADDRESS 0
-%define SOB_NIL_ADDRESS 1
-%define SOB_FALSE_ADDRESS 4
-%define SOB_TRUE_ADDRESS 2
+%define SOB_VOID_ADDRESS const_tbl+0
+%define SOB_NIL_ADDRESS const_tbl+1
+%define SOB_FALSE_ADDRESS const_tbl+2
+%define SOB_TRUE_ADDRESS const_tbl+4
 
 
 
@@ -271,8 +257,142 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
+ forDebug:
+;applic
+;const
+mov rax    , const_tbl + 24
+ push rax
+;const
+mov rax    , const_tbl + 15
+ push rax
 ;const
 mov rax    , const_tbl + 6
+ push rax
+push 3
+;LambdaOpt
+MALLOC r9, 8 ;r9 = extEnv pointer
+mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
+
+MALLOC rdx, 16 ;number of params
+mov qword [r9], rdx
+mov rcx, qword [rsp] ; rcx = fixedParamsCount, rsp = num of args???
+	    	mov r12, 0 ; r12 = i 
+	       copyParamsLoop0:
+	    		mov qword rdx, [r9]
+	    		mov r13, r12
+	    		add r13, 4
+	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
+	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
+	    		inc r12
+	    		dec rcx
+	    		jne copyParamsLoop0
+MAKE_CLOSURE (rax, r9, LOptcode0)
+;mov rax, [rax]
+jmp LOptcont0
+LOptcode0:
+ push rbp ;;check this!!!! this is just a try! was after fix stack before!
+	    mov rbp, rsp
+
+	    ;rax = num of opt params
+	    mov rax, qword [rbp + 3*8]
+	    sub rax, 1
+	    cmp rax, 0
+	    je shiftStackAndPushNil1
+
+	    ;generate opt list
+	    mov rdx, SOB_NIL_ADDRESS ; rdx = list
+	    mov rcx, rax ; rcx = num of opt params
+	    mov r9, qword [rbp + 8*3]
+	    optToListLoop1:
+	    	mov rbx, qword [rbp + 8*(r9+3)] ; rbx = OPTi
+	    	MAKE_PAIR (r10, rbx, rdx) ;r10 = Pair(rbx, rdx)
+	    	mov rdx, r10
+	    	dec r9
+	    	dec rcx
+	    	jne optToListLoop1
+
+	    ;override last OPT with the opt list
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 3 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	   	mov qword [rbp + 8*r9], rdx
+
+	    ;shift frame - shift size is (optCount - 1)
+	    mov rcx, 4 + 1;rcx = frame size
+	    mov r12, rcx
+	    dec r12 ; r12 = index of last opt in stack
+	    mov r10, qword [rbp + 8*3]
+	    sub r10, 1 + 1 ; r10 = optCount - 1
+	    shiftStack1:
+	    	mov r8, qword [rbp+r12*8]
+	    	mov r13, r12
+	    	add r13 , r10
+	       	mov [rbp+ 8*r13], r8
+	    	dec r12 
+	    	dec rcx
+	    	jne shiftStack1
+
+
+	    mov rax, r10
+	    mov rbx, 8
+	    mul rbx
+	    add rbp, rax
+	    add rsp, rax 
+
+	    jmp fixN1
+
+	    shiftStackAndPushNil1:
+	    mov rcx, 4 + 1;rcx = frame size
+	    mov r12, 0 ; r12 = i
+	    shiftStackNil1:
+	    	mov r8, qword [rbp+r12*8]
+	       	mov [rbp+ 8*r12 - 8], r8
+	    	inc r12 
+	    	dec rcx
+	    	jne shiftStackNil1
+
+	    sub rbp, 8
+	    sub rsp, 8
+
+	    ;;push nil -- > check this!
+	    mov r8, [SOB_NIL_ADDRESS]
+
+	    ;override value *after* last opt with 
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 4 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	   	mov qword [rbp + 8*r9], r8
+
+	    ;fix n to be fixedParamsCount + 1:
+	  	fixN1:
+	 	mov qword [rbp + 3*8], 2
+;;;;;;push rbp
+;;;;;;mov rbp, rsp
+;varParam
+ mov rax, qword [rbp + 8*(4 + 1)]
+leave
+ret
+LOptcont0:
+ 
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure0
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic0
+
+NotAClosure0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic0:
+
     call write_sob_if_not_void
 leave
  ret
@@ -1221,12 +1341,12 @@ set_cdr:
     ;ret
     
 cons:
-    ;push rbp
-    ;mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;mov rdi, PVAR(1)
-    ;MAKE_PAIR rax, rsi, rdi ;todo: check if need to be [rsi], [rdi]
-    ;;make_pair puts the result in rax
-    ;leave
-    ;ret
+    mov rsi, PVAR(0) 
+    mov rdi, PVAR(1)
+    MAKE_PAIR (rax, rsi, rdi) ;todo: check if need to be [rsi], [rdi]
+    ;make_pair puts the result in rax
+    leave
+    ret
