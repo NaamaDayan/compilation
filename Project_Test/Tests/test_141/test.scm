@@ -1,3 +1,3 @@
    
-                (not #t)                                    ; #f
+                (vector? "no")                              ; #f
     

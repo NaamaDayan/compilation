@@ -1,3 +1,3 @@
    
-                (integer? 3.14)                             ; #f
+                (string-length "a")
     

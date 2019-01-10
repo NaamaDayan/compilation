@@ -1,3 +1,3 @@
    
-               (eq? #f #t)                                 ; #f
+                (pair? '())                                 ; excpetion - wrong number of arguments
     

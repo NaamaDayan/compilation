@@ -1,3 +1,3 @@
    
-                (cons #xabc #t)                             ; (2748 . #t)
+                (number? -1)                                ; #t
     

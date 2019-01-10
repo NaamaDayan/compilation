@@ -1,3 +1,3 @@
    
-             'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol    
+                (= 3 3 3 3 -1)                              ; #f
     

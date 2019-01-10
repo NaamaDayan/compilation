@@ -1,3 +1,3 @@
    
-                (null? null?)                               ; #f
+              (zero? 0e10)                                 ; #t  
     

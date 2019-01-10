@@ -42,13 +42,7 @@ malloc_pointer:
 
 section .data
 
-
-;;macros we added:
-sob_void_label: dq SOB_VOID ;;to use n set and define
-
 %define WORD_BYTES 8
-
-
 
 %macro MAKE_LITERAL 2
 db %1
@@ -103,16 +97,6 @@ db %1
 %define STR_DATA_PTR(r) r + WORD_BYTES+ TYPE_SIZE
 %define STRING_REF(r,i) byte [r+WORD_BYTES+ TYPE_SIZE + i]
 
-
-%macro MAKE_LITERAL_VECTOR 0-*
-	db T_VECTOR
-	dq %0
-%rep %0
-	dq %1
-%rotate 1
-%endrep
-%endmacro
-
 %define LOWER_DATA(sob) qword [sob+ TYPE_SIZE]
 %define UPPER_DATA(sob) qword [sob+WORD_BYTES +TYPE_SIZE]
 %define CAR LOWER_DATA
@@ -155,10 +139,10 @@ const_tbl:
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
-%define SOB_VOID_ADDRESS " ^ get_const_address Void ^ "
-%define SOB_NIL_ADDRESS " ^ get_const_address (Sexpr Nil) ^ "
-%define SOB_FALSE_ADDRESS " ^ get_const_address (Sexpr (Bool true)) ^ "
-%define SOB_TRUE_ADDRESS " ^ get_const_address (Sexpr (Bool false)) ^ "
+%define SOB_VOID_ADDRESS const_tbl+" ^ get_const_address Void ^ "
+%define SOB_NIL_ADDRESS const_tbl+" ^ get_const_address (Sexpr Nil) ^ "
+%define SOB_FALSE_ADDRESS const_tbl+" ^ get_const_address (Sexpr (Bool false)) ^ "
+%define SOB_TRUE_ADDRESS const_tbl+" ^ get_const_address (Sexpr (Bool true)) ^ "
 
 
 
@@ -202,6 +186,7 @@ mov rbp, rsp
  ;;pop rbp
  ;;ret
  
+ forDebug:
 ";;
 
 let epilogue = (*TODO: implement apply*)
@@ -254,15 +239,15 @@ set_cdr:
     ;ret
     
 cons:
-    ;push rbp
-    ;mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;mov rdi, PVAR(1)
-    ;MAKE_PAIR rax, rsi, rdi ;todo: check if need to be [rsi], [rdi]
-    ;;make_pair puts the result in rax
-    ;leave
-    ;ret";;
+    mov rsi, PVAR(0) 
+    mov rdi, PVAR(1)
+    MAKE_PAIR (rax, rsi, rdi) ;todo: check if need to be [rsi], [rdi]
+    ;make_pair puts the result in rax
+    leave
+    ret";;
 
 exception X_missing_input_file;;
 

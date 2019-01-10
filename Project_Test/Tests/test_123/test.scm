@@ -1,3 +1,3 @@
    
-                (integer? -10000000)                        ; #t
+                (string-length "")                          ; 0
     

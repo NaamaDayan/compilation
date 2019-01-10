@@ -1,3 +1,3 @@
    
-                (boolean? (if #f #f #f))                    ; #t
+                (make-string 3)                             ; "\000;\000;\000;"
     

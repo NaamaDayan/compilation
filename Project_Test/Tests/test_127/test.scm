@@ -1,3 +1,3 @@
    
-                (integer->char 60)
+              (string? "string")                          ; #t  
     

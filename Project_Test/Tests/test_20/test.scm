@@ -1,3 +1,3 @@
    
-              "string"                                 ; simple string  
+                (= 5 5 5 5 5 5 5 5 5 5 5)                   ; #t
     

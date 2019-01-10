@@ -1,3 +1,3 @@
    
-                (map + '(1 2 0.333) '(-1 -2 -0.333))            ; (0 . (0 . (0 . ())))
+                (vector-length '#(vector? vector-ref))
     

@@ -1,1 +1,3 @@
-'(55 4.4 "gotcha" #t #f #\tab) #f #t " hfdgfdgdf454 fgfd" 'dfdsfdsfds
+   
+                (append '(1 2 3) '() '(1 2 . 3))            ; (1 . (2 . (3 . (1 . (2 . 3)))))
+    

@@ -1,3 +1,3 @@
    
-                (eq? '() '())                               ; #t
+                (number? "hello, world!")
     

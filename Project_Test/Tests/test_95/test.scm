@@ -1,3 +1,3 @@
    
-                (boolean? (if #f #t))                       ; #f
+                (make-string 5 #\r)
     
