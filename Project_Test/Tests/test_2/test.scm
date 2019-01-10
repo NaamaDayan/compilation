@@ -1,5 +1,1 @@
-   
-             (let ((x #f) (y #t))
-            (let ((z 1))
-            y))     
-    
+(define pro (lambda (x) x))

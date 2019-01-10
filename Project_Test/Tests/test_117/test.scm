@@ -1,3 +1,3 @@
    
-                (set-car! '(a b c) '(x y z))
+                (boolean? (if #f #t))                       ; #f
     

@@ -1,3 +1,3 @@
    
-                (symbol? "symbol")                          ; #f
+                (eq? (if #f #f) (if #f #f))                 ; #t
     

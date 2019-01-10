@@ -1,3 +1,3 @@
    
-               (+ 0.5 1e-2 0.32 5.1)                         ;  
+            '#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol    
     

@@ -1,3 +1,3 @@
    
-               (+ 0.25 0.25 0.25 0.25)                         ; 1 
+           '#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list     
     

@@ -4,6 +4,7 @@
 '(
 
 #t
+#f
 
 
 ) 
@@ -15,7 +16,8 @@
 ;Yours Output:
 '(
 
-Segmentation fault (core dumped)
+#t
+#f
 
 
 )

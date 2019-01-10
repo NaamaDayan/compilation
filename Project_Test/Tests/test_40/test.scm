@@ -1,3 +1,3 @@
    
-               (* 2)                                       ; 2 
+                (if #t 1 2)                               ; if with 'else' clause 
     

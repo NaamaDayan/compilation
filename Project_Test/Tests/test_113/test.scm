@@ -1,3 +1,3 @@
    
-                (pair? 5)
+                (boolean? #t)                               ; #t
     

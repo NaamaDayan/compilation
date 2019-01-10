@@ -1,3 +1,3 @@
    
-                (eq? (if #f #f) (if #f #f))                 ; #t
+                (append '(1) 2)
     

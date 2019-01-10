@@ -1,3 +1,3 @@
    
-                (vector-length '#(vector? vector-ref))
+                (eq? #\newline #\newline)                   ; #t
     

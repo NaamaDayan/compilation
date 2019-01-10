@@ -1,3 +1,3 @@
    
-               (integer->char 10)                          ; #\newline 
+               (+ 1 -1)                                    ; 0 
     

@@ -1,3 +1,3 @@
    
-              (string? "string")                          ; #t  
+                (char? #\newline)                           ; #t
     

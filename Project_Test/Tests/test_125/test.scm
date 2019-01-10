@@ -1,3 +1,3 @@
    
-                (string-ref "string" 1)
+                (char->integer #\page)
     

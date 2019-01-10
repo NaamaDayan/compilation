@@ -1,3 +1,3 @@
    
-                (vector-length '#())                        ; 0
+                (eq? 0.4 2)                               ; #f
     

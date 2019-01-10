@@ -1,3 +1,3 @@
    
-                (pair? '())                                 ; excpetion - wrong number of arguments
+                (- 0.5 -0.3 0.25 -0.2)
     

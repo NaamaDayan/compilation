@@ -5571,7 +5571,7 @@ void InitializingTests()
     )V0G0N";
 
     // Adding Tests
-    /*testsCodes.push_back(test_0);
+    testsCodes.push_back(test_0);
     testsCodes.push_back(test_1);
     testsCodes.push_back(test_2);
     testsCodes.push_back(test_3);
@@ -5630,7 +5630,7 @@ void InitializingTests()
     testsCodes.push_back(test_56);
     testsCodes.push_back(test_57);
     testsCodes.push_back(test_58);
-    testsCodes.push_back(test_59);*/
+    testsCodes.push_back(test_59);//
     testsCodes.push_back(test_60);
     testsCodes.push_back(test_61);
     testsCodes.push_back(test_62);

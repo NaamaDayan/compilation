@@ -1,3 +1,3 @@
    
-                (make-vector 2 "scheme")
+                (/ 1)                                       ; 1
     

@@ -1,3 +1,3 @@
    
-                (procedure? procedure?)                     ; #t
+                (boolean? #f)                               ; #t
     

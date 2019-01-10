@@ -1,3 +1,3 @@
    
-                (string-length "")                          ; 0
+                (cdr '(1 2 3))
     

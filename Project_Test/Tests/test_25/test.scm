@@ -1,3 +1,1 @@
-   
-               (> 3 2)                                     ; #t 
-    
+(define pro 10) pro pro pro(define tail 5) tail pro

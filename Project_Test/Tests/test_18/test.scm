@@ -1,3 +1,1 @@
-   
-                (= 1 2)                                     ; #f
-    
+(define pro (lambda (x) x)) (pro 5)

@@ -1,3 +1,3 @@
    
-                (string-length "a")
+                (char->integer #\A)                         ; 65
     

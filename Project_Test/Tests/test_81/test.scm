@@ -1,3 +1,3 @@
    
-                                        ; #t (because of constants table)
+                (= 2 2.0)
     

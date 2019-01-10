@@ -1,3 +1,3 @@
    
-               (string-set! "string" 1 #\p) 
+                (char? #\5)                                 ; #t
     

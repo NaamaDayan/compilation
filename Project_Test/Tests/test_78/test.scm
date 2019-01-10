@@ -1,3 +1,3 @@
    
-                (eq? #\newline #\newline)                   ; #t
+                (= 1 2)                                     ; #f
     
