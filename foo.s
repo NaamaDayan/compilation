@@ -107,9 +107,7 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 5
-MAKE_LITERAL_INT 2
-MAKE_LITERAL_INT 3
+MAKE_LITERAL_INT 1
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -260,20 +258,14 @@ mov rbp, rsp
  forDebug:
 ;applic
 ;const
-mov rax    , const_tbl + 24
- push rax
-;const
-mov rax    , const_tbl + 15
- push rax
-;const
 mov rax    , const_tbl + 6
  push rax
-push 3
-;LambdaOpt
+push 1
+;lambdaSimple
 MALLOC r9, 8 ;r9 = extEnv pointer
 mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
 
-MALLOC rdx, 16 ;number of params
+MALLOC rdx, 8 ;number of params
 mov qword [r9], rdx
 mov rcx, qword [rsp] ; rcx = fixedParamsCount, rsp = num of args???
 	    	mov r12, 0 ; r12 = i 
@@ -286,91 +278,17 @@ mov rcx, qword [rsp] ; rcx = fixedParamsCount, rsp = num of args???
 	    		inc r12
 	    		dec rcx
 	    		jne copyParamsLoop0
-MAKE_CLOSURE (rax, r9, LOptcode0)
+MAKE_CLOSURE (rax, r9, Lcode0)
 ;mov rax, [rax]
-jmp LOptcont0
-LOptcode0:
- push rbp ;;check this!!!! this is just a try! was after fix stack before!
-	    mov rbp, rsp
-
-	    ;rax = num of opt params
-	    mov rax, qword [rbp + 3*8]
-	    sub rax, 1
-	    cmp rax, 0
-	    je shiftStackAndPushNil1
-
-	    ;generate opt list
-	    mov rdx, SOB_NIL_ADDRESS ; rdx = list
-	    mov rcx, rax ; rcx = num of opt params
-	    mov r9, qword [rbp + 8*3]
-	    optToListLoop1:
-	    	mov rbx, qword [rbp + 8*(r9+3)] ; rbx = OPTi
-	    	MAKE_PAIR (r10, rbx, rdx) ;r10 = Pair(rbx, rdx)
-	    	mov rdx, r10
-	    	dec r9
-	    	dec rcx
-	    	jne optToListLoop1
-
-	    ;override last OPT with the opt list
-	    mov r9, qword [rbp + 8 *3]
-	    add r9, 3 ;;r9 = [rbp + 3*8] + 4  = index of last opt
-	   	mov qword [rbp + 8*r9], rdx
-
-	    ;shift frame - shift size is (optCount - 1)
-	    mov rcx, 4 + 1;rcx = frame size
-	    mov r12, rcx
-	    dec r12 ; r12 = index of last opt in stack
-	    mov r10, qword [rbp + 8*3]
-	    sub r10, 1 + 1 ; r10 = optCount - 1
-	    shiftStack1:
-	    	mov r8, qword [rbp+r12*8]
-	    	mov r13, r12
-	    	add r13 , r10
-	       	mov [rbp+ 8*r13], r8
-	    	dec r12 
-	    	dec rcx
-	    	jne shiftStack1
-
-
-	    mov rax, r10
-	    mov rbx, 8
-	    mul rbx
-	    add rbp, rax
-	    add rsp, rax 
-
-	    jmp fixN1
-
-	    shiftStackAndPushNil1:
-	    mov rcx, 4 + 1;rcx = frame size
-	    mov r12, 0 ; r12 = i
-	    shiftStackNil1:
-	    	mov r8, qword [rbp+r12*8]
-	       	mov [rbp+ 8*r12 - 8], r8
-	    	inc r12 
-	    	dec rcx
-	    	jne shiftStackNil1
-
-	    sub rbp, 8
-	    sub rsp, 8
-
-	    ;;push nil -- > check this!
-	    mov r8, [SOB_NIL_ADDRESS]
-
-	    ;override value *after* last opt with 
-	    mov r9, qword [rbp + 8 *3]
-	    add r9, 4 ;;r9 = [rbp + 3*8] + 4  = index of last opt
-	   	mov qword [rbp + 8*r9], r8
-
-	    ;fix n to be fixedParamsCount + 1:
-	  	fixN1:
-	 	mov qword [rbp + 3*8], 2
-;;;;;;push rbp
-;;;;;;mov rbp, rsp
+jmp Lcont0
+Lcode0:
+ push rbp
+mov rbp, rsp
 ;varParam
- mov rax, qword [rbp + 8*(4 + 1)]
+ mov rax, qword [rbp + 8*(4 + 0)]
 leave
 ret
-LOptcont0:
+Lcont0:
  
 ;check if closure 
 cmp byte [rax], T_CLOSURE
@@ -396,6 +314,89 @@ FinishedApplic0:
     call write_sob_if_not_void
 leave
  ret
+apply:
+        push rbp
+        mov rbp, rsp
+        push SOB_NIL_ADDRESS ;; push magicarg
+        xor r8, r8 ;; we will use to count number of args in list
+        mov r9 , PARAM_COUNT
+        dec r9
+        mov rsi, PVAR(r9) ;; last argument is list -> rsi
+        .get_list_params:
+         mov dl, byte [rsi]
+         cmp dl, T_NIL
+         je .pre_rearange_args
+         cmp dl, T_PAIR
+         je .push_arg
+         jmp .wrong_type
+.push_arg:
+    CAR r10, rsi
+    CDR rsi, rsi
+    push r10
+    inc r8
+    jmp .get_list_params
+
+.pre_rearange_args:
+    xor r10 , r10 ;; we will use a counter
+    mov r11 , r8 
+    dec r11
+
+.rearange_args:
+    cmp r10, r11
+    jge .pre_push_rest_args 
+    mov r14, [rsp + 8 * r10]
+    mov r15, [rsp + 8 * r11]
+    mov [rsp + 8 * r10], r15
+    mov [rsp + 8 * r11], r14
+    inc r10
+    dec r11
+    jmp .rearange_args
+.pre_push_rest_args:
+    mov r9 , PARAM_COUNT
+    sub r9, 2
+.push_rest_args:
+    cmp r9, 0 
+    jle .end_stack
+    mov rsi, PVAR(r9)
+    push rsi
+    dec r9
+    jmp .push_rest_args
+.end_stack:
+    mov r9 , PARAM_COUNT
+    sub r9, 2 ;; remember proc is also an argument
+    add r9, r8
+    push r9 ;; push arg count
+    mov rsi ,PVAR(0)
+    cmp byte [rsi], T_CLOSURE
+    jne .wrong_type
+    CLOSURE_ENV rdi,rsi
+    push rdi ;; push closure env
+    push qword [rbp + 8] ;; push ret adress
+    mov r15, qword [rbp] ;;save old rbp
+    
+ .shift_frame:
+    add r9 , 5
+    SHIFT_FRAME_2 r9
+    
+  
+  .end:  
+  mov rbp,r15
+  jmp qword [rsi+9]
+  add rsp , 8*1 ; pop env
+  pop rbx ; pop arg count
+  inc rbx ; for remove magic
+  shl rbx , 3 ; rbx = rbx * 8
+  add rsp , rbx ;  pop args
+  jmp .return 
+.wrong_type:
+    mov     rax, 60               ; system call 60 is exit
+    xor     rdi,rdi           ;return code 0
+    syscall 
+.return:
+    leave
+    ret  
+
+
 is_boolean:
     push rbp
     mov rbp, rsp

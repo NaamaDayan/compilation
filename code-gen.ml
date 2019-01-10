@@ -459,7 +459,7 @@ let rec genCode exp deepCounter= match exp with
 
 	    ;override last OPT with the opt list
 	    mov r9, qword [rbp + 8 *3]
-	    add r9, 3 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	    add r9, 3 ;;r9 = [rbp + 3*8] + 3  = index of last opt
 	   	mov qword [rbp + 8*r9], rdx
 
 	    ;shift frame - shift size is (optCount - 1)
@@ -511,16 +511,6 @@ let rec genCode exp deepCounter= match exp with
 	  	"^ fixN ^ ":
 	 	mov qword [rbp + 3*8], " ^ (string_of_int (fixedParamsCount + 1)) ^ "\n"
 	   
-
-(*   			(* r = [rbp +- 8*i] , sign = sub/add*)
-  		and init_register_with_rbp_val reg i sign = 
-  			"mov "^ reg^", rbp
-  			push rax
-  			mov rax, WORD_SIZE
-  			mul "^i ^"\n"^
-  			sign ^ reg ^ ", rax
-  			pop rax
-  			mov "^ reg ^", ["^reg^"] \n" *)
   		
 
 	    and applicCodeGen proc argList deepCounter=
@@ -569,11 +559,9 @@ let rec genCode exp deepCounter= match exp with
 	    	"mov r11, PARAM_COUNT ; save old param count \n"^
 
   			"push rax\n"^
-  			"push rbx\n"^
-  		  	"mov rbx, 8\n"^
   			"mov rax, PARAM_COUNT\n"^
   			"add rax, 4\n"^
-  			"mov rcx, "^(string_of_int (3+(List.length argList)))^"\n"^
+  			"mov rcx, "^(string_of_int (3+(List.length argList)))^" ;;check! maybe add 4 instead\n"^
   			"mov r12, 1\n"^
   			loopLabel ^ ":\n"^
   			"dec rax\n"^
@@ -588,16 +576,17 @@ let rec genCode exp deepCounter= match exp with
   			"inc r12\n"^
   			"dec rcx\n"^
   			"jne " ^ loopLabel ^ "\n\n"^
+  			"pop rax\n"^
 
   			";clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
-  			"push rax\n"^
-  			"mov rax, WORD_SIZE\n"^
+
+  			";push rax\n"^
+  			";mov rax, WORD_SIZE\n"^
   			"add r11, 4\n"^
-  			"mul r11\n"^
-  			"add rsp, rax\n"^
-  			"pop rax\n\n"^
-  			"pop rbx\n"^
-  			"pop rax\n"^
+  			"shl r11,3\n"^
+  			"add rsp, r11\n"^
+  			";pop rax\n\n"^
+  			";pop rax\n"^
 
 	    	"mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp\n"^
 	    	"jmp [r13 + TYPE_SIZE + WORD_BYTES]\n" ^(*call proc-body*)
