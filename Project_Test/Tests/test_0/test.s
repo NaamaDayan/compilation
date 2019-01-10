@@ -297,6 +297,7 @@ FinishedApplic0:
     call write_sob_if_not_void
 leave
  ret
+
 is_boolean:
     push rbp
     mov rbp, rsp

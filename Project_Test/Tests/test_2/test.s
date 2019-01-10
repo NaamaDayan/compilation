@@ -107,7 +107,8 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 85
+MAKE_LITERAL_INT 5
+MAKE_LITERAL_INT 0
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -119,6 +120,8 @@ MAKE_LITERAL_INT 85
 
 
 fvar_tbl:
+dq T_UNDEFINED
+dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -256,17 +259,69 @@ mov rbp, rsp
  ;;ret
  
  forDebug:
+;define(Var'(VarFree))
 ;applic
-push 0
-;applic
-;const
-mov rax    , const_tbl + 6
+;varFree
+mov rax, qword [fvar_tbl+256]
  push rax
-push 1
+;varFree
+mov rax, qword [fvar_tbl+232]
+ push rax
+;varFree
+mov rax, qword [fvar_tbl+224]
+ push rax
+;varFree
+mov rax, qword [fvar_tbl+32]
+ push rax
+push 4
 ;lambdaSimple
 MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
 jmp Lcont0
 Lcode0:
+ push rbp
+mov rbp, rsp
+;const
+mov rax    , const_tbl + 6
+leave
+ret
+Lcont0:
+ 
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure0
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic0
+
+NotAClosure0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic0:
+
+mov qword [fvar_tbl+264], rax
+mov rax, SOB_VOID_ADDRESS
+    call write_sob_if_not_void
+
+
+;define(Var'(VarFree))
+;applic
+;varFree
+mov rax, qword [fvar_tbl+216]
+ push rax
+push 1
+;lambdaSimple
+MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode1)
+jmp Lcont1
+Lcode1:
  push rbp
 mov rbp, rsp
 ;lambdaSimple
@@ -282,30 +337,82 @@ mov qword [r9], rdx
  ;rdx is the params vector
 mov rcx, qword [rbp+3*8] ; rcx = param count
 	    	mov r12, 0 ; r12 = i 
-	       copyParamsLoop0:
+	       copyParamsLoop1:
 	    		mov r13, r12
 	    		add r13, 4
 	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
 	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
 	    		inc r12
 	    		dec rcx
-	    		jne copyParamsLoop0
-MAKE_CLOSURE (rax, r9, Lcode1)
-jmp Lcont1
-Lcode1:
+	    		jne copyParamsLoop1
+MAKE_CLOSURE (rax, r9, Lcode2)
+jmp Lcont2
+Lcode2:
  push rbp
 mov rbp, rsp
+;applicTP
+;const
+mov rax    , const_tbl + 15
+ push rax
+;varParam
+ mov rax, qword [rbp + 8*(4 + 0)]
+ push rax
+push 2
 ;varBound
  mov rax, qword[rbp + 8*2]
 mov rax, qword [rax + 8 * 0]
 mov rax, qword [rax + 8 * 0]
+mov r13, rax ;save closure
+cmp byte [rax], T_CLOSURE
+jne NotAClosureTP0
+push qword [rax + TYPE_SIZE] ;push env
+push qword [rbp + WORD_BYTES*1] ;old ret address
+mov qword r10, [rbp] ; r10 = old old rbp
+mov r11, PARAM_COUNT ; save old param count 
+push rax
+mov rax, PARAM_COUNT
+add rax, 4
+mov rcx, 5 ;;check! maybe add 4 instead
+mov r12, 1
+Loop0:
+dec rax
+mov r8, rbp
+push rax
+mov rax, WORD_SIZE
+mul r12
+sub r8, rax
+pop rax
+mov r8, [r8]  
+mov [rbp+WORD_BYTES*rax], r8
+inc r12
+dec rcx
+jne Loop0
+
+pop rax
+;clean stack: add rsp , WORD_BYTES*(r11+4)
+;push rax
+;mov rax, WORD_SIZE
+add r11, 4
+shl r11,3
+add rsp, r11
+;pop rax
+
+;pop rax
+mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
+jmp [r13 + TYPE_SIZE + WORD_BYTES]
+NotAClosureTP0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+
 leave
 ret
-Lcont1:
+Lcont2:
  
 leave
 ret
-Lcont0:
+Lcont1:
  
 ;check if closure 
 cmp byte [rax], T_CLOSURE
@@ -328,27 +435,8 @@ NotAClosure1:
 	syscall
 FinishedApplic1:
 
-;check if closure 
-cmp byte [rax], T_CLOSURE
-jne NotAClosure0
-
-push qword [rax+TYPE_SIZE]  ;push env:
-call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
-
-;cleaning the stack 
-add rsp, 8*1 ; pop env
-pop rbx ; pop arg count
-shl rbx, 3 ; rbx = rbx * 8
-add rsp, rbx; pop args
-jmp FinishedApplic0
-
-NotAClosure0:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-FinishedApplic0:
-
+mov qword [fvar_tbl+272], rax
+mov rax, SOB_VOID_ADDRESS
     call write_sob_if_not_void
 leave
  ret

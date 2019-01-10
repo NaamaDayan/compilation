@@ -3,7 +3,7 @@
  ;Scheme Output:
 '(
 
-85
+1
 
 
 ) 
@@ -15,7 +15,7 @@
 ;Yours Output:
 '(
 
-Segmentation fault (core dumped)
+sh: 1: ./test: not found
 
 
 )

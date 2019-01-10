@@ -1,0 +1,4 @@
+make[1]: Entering directory '/home/shahar/compiler'
+cd /home/shahar/compiler/ && ocaml compiler.ml /home/shahar/compiler/Project_Test/Tests/test_3/test.scm > Project_Test/Tests/test_3/test.s && nasm -g -f elf64 -o Project_Test/Tests/test_3/test.o Project_Test/Tests/test_3/test.s && gcc -static -m64 -o Project_Test/Tests/test_3/test Project_Test/Tests/test_3/test.o && mv Project_Test/Tests/test_3/test /home/shahar/compiler
+Makefile:7: recipe for target 'Project_Test/Tests/test_3/test' failed
+make[1]: *** [Project_Test/Tests/test_3/test] Interrupt
