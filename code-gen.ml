@@ -409,7 +409,7 @@ let rec genCode exp deepCounter= match exp with
 	    ";mov rax, [rax]\n"^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
-	    (fixStack args)
+	    (fixStack args) ^
 	    "push rbp\n" ^
 	    "mov rbp, rsp\n" ^
 	    (genCode body (envSize+1)) ^ "\n" ^
@@ -457,7 +457,10 @@ let rec genCode exp deepCounter= match exp with
 	    sub r10, -1 + " ^ (string_of_int fixedParamsCount) ^" ; r10 = optCount - 1
 	    "^ shiftStack ^ ":
 	    	mov r8, qword [rbp+r12*8]
-	       	mov [rbp+ 8*(r12 + r10)], r8
+	    	push r12
+	    	add r12 , r10
+	       	mov [rbp+ 8*r12], r8
+	       	pop r12
 	    	inc r12 
 	    	dec rcx
 	    	jne " ^ shiftStack ^ "
@@ -465,8 +468,11 @@ let rec genCode exp deepCounter= match exp with
 	    pop r12
 	    pop rcx
 
-	    add rbp, r10 * 8
-	    add rsp, r10 * 8 
+	    mov rax, r10
+	    mov rbx, 8
+	    mul rbx
+	    add rbp, rax
+	    add rsp, rax 
 
 	    jmp " ^fixN ^ "
 
@@ -490,13 +496,13 @@ let rec genCode exp deepCounter= match exp with
 	    sub rsp, 8
 
 	    ;;push nil -- > check this!
-	    mov r8, [SOB_NIL_ADDRESS] "
+	    mov r8, [SOB_NIL_ADDRESS] \n"
 	    ^ (overrideLastOptWith "r8")^
 
 
 	    ";fix n to be fixedParamsCount + 1:
 	  	"^ fixN ^ ":
-	 	mov qword [rbp + 3*8], " ^ (string_of_int (fixedParamsCount + 1))
+	 	mov qword [rbp + 3*8], " ^ (string_of_int (fixedParamsCount + 1)) ^ "\n"
 	   
 
 	    and overrideLastOptWith val_ =  
