@@ -164,7 +164,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 7 ;;SOB_NIL_ADDRESS
+    push qword 7 ;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 

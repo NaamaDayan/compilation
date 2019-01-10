@@ -1,3 +1,3 @@
    
-                (append 'a)                                 ; a
+                (number? -1)                                ; #t
     

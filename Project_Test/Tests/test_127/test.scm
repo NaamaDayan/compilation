@@ -1,3 +1,0 @@
-   
-                (char? #\newline)                           ; #t
-    

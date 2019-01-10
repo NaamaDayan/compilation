@@ -99,10 +99,26 @@ void InitializingTests()
     string test_26 = /*"(define pro (lambda (f x) (f x)))" 
                      "(define tail (lambda x x))"
                      "(pro tail 5)*/""; //lambda opt!!!!!
-    string test_27 = "((lambda (x y z w g) g)1 2 3 4 5)";
-    string test_28 = R"V0G0N(   
+    string test_27 = /*R"V0G0N(   
+             (let ((x #f) (y #t))
+            (let ((z 1))
+            y))     
+    )V0G0N"*/
+    /*R"V0G0N(   
+                (define proc (lambda (x) 
+                                (lambda () x)))   
+            ((proc 1))
+    )V0G0N"*/
+    R"V0G0N(   
+            ((lambda(x) x) 85)
+    )V0G0N";
+    string test_28 = /*R"V0G0N(   
                 ((lambda (x) 6) 6)
                 ((lambda (y) 5) 5)
+    )V0G0N"*/
+    R"V0G0N(   
+            (((lambda (x) 
+                (lambda () x)) 85))
     )V0G0N";
     string test_29 = R"V0G0N(   
                 (define append 
@@ -120,7 +136,7 @@ void InitializingTests()
                 ))   
             (((proc 1 2 3) 4 5 6) 7 8 9)
     )V0G0N";
-    string test_31 = ""/*R"V0G0N(   
+    string test_31 = R"V0G0N(   
             (define foo5
             (lambda (x y)
                 (lambda () 
@@ -130,7 +146,7 @@ void InitializingTests()
             ))
 
         ((foo5 1 2))   
-    )V0G0N"*/;
+    )V0G0N";
     string test_32 = R"V0G0N(   
            '#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list     
     )V0G0N";
@@ -1425,9 +1441,9 @@ void InitializingTests()
     string test_56 = R"V0G0N(   
                  (define foo (lambda (x) x))
     )V0G0N";
-    string test_57 = R"V0G0N(   
+    string test_57 = /*R"V0G0N(   
                  ((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack, and then wrapped in a list: (Nil, Nil)
-    )V0G0N";
+    )V0G0N"*/"";
     string test_58 = /*R"V0G0N(   
                  ((lambda (a . d) d) 1 2 3 4 6 7 8 9 10)      ; packing the optional arguments to a list - should return (4 . (6 . (7 . (8 . ()))))
     )V0G0N"*/"";
@@ -5571,7 +5587,7 @@ void InitializingTests()
     )V0G0N";
 
     // Adding Tests
-    testsCodes.push_back(test_0);
+    /*testsCodes.push_back(test_0);
     testsCodes.push_back(test_1);
     testsCodes.push_back(test_2);
     testsCodes.push_back(test_3);
@@ -5597,7 +5613,7 @@ void InitializingTests()
     testsCodes.push_back(test_23);
     testsCodes.push_back(test_24);
     testsCodes.push_back(test_25);
-    testsCodes.push_back(test_26);
+    testsCodes.push_back(test_26);*/
     testsCodes.push_back(test_27);
     testsCodes.push_back(test_28);
     testsCodes.push_back(test_29);
@@ -5651,10 +5667,10 @@ void InitializingTests()
     testsCodes.push_back(test_77);
     testsCodes.push_back(test_78);
     testsCodes.push_back(test_79);*/
-    testsCodes.push_back(test_80);
+  //  testsCodes.push_back(test_80);
     //testsCodes.push_back(test_81);
     //testsCodes.push_back(test_82);
-    testsCodes.push_back(test_83);
+ /*   testsCodes.push_back(test_83);
     testsCodes.push_back(test_84);
     testsCodes.push_back(test_85);
     testsCodes.push_back(test_86);
@@ -5726,7 +5742,7 @@ void InitializingTests()
     testsCodes.push_back(test_152);
    // testsCodes.push_back(test_153);
     testsCodes.push_back(test_154);
-   // testsCodes.push_back(test_155);
+   // testsCodes.push_back(test_155);*/
     testsCodes.push_back(test_156);
     testsCodes.push_back(test_157);
     testsCodes.push_back(test_158);

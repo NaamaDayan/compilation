@@ -1,3 +1,3 @@
    
-            '#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol    
+                 ((lambda (x) (set! x 5)) 1)               ; set! expressions return void - should print a newline in the prompt
     

@@ -1,3 +1,3 @@
    
-                 ((lambda (x) (set! x 5)) 1)               ; set! expressions return void - should print a newline in the prompt
+                (map (lambda (x) x) '(-1 -2 -0.6))          ; (-1 . (-2 . (-3/5 . ())))
     

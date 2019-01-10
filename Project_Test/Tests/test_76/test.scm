@@ -1,3 +1,3 @@
    
-                (< 3 2)                                     ; #f
+                (procedure? (lambda s (car s)))             ; #t
     

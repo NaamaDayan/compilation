@@ -1,3 +1,3 @@
    
-                 (or #f #f 'a)                             ; or with sub-expressions
+                (integer? -10000000)                        ; #t
     

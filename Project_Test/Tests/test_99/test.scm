@@ -1,3 +1,3 @@
    
-                (*)                                         ; 1
+                (vector-length '#(vector? vector-ref))
     

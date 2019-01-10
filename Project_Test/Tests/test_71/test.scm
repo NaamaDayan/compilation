@@ -1,3 +1,3 @@
    
-                (append '(1) 2)
+                (number? "hello, world!")
     

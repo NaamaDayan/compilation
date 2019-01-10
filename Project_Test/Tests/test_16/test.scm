@@ -1,1 +1,3 @@
-(or #f #f #f #f #f #f 5)
+   
+                ((lambda (y z) ((lambda ( x w)  (set! y 5) y) 3 4))1 2)
+    
