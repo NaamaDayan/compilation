@@ -64,8 +64,9 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
+MAKE_LITERAL_INT 1
 MAKE_LITERAL_INT 2
-MAKE_LITERAL_PAIR(const_tbl+6, const_tbl+1)
+MAKE_LITERAL_INT 3
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -219,25 +220,100 @@ mov rbp, rsp
  forDebug:
 ;applic
 ;const
+mov rax    , const_tbl + 24
+ push rax
+;const
 mov rax    , const_tbl + 15
  push rax
-;lambdaSimple
-MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
-jmp Lcont0
-Lcode0:
+;const
+mov rax    , const_tbl + 6
+ push rax
+push 3
+;LambdaOpt
+MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Loptcode0)
+jmp Loptcont0
+Loptcode0:
  push rbp
 mov rbp, rsp
+ 
 
+	    ;rax = num of opt params
+	    mov rax, qword [rbp + 3*8]
+	    sub rax, 0
+	    cmp rax, 0
+	    je shiftStackAndPushNil1
+
+	    ;generate opt list
+	    mov rdx, SOB_NIL_ADDRESS ; rdx = list
+	    mov rcx, rax ; rcx = num of opt params
+	    mov r9, qword [rbp + 8*3]
+	    optToListLoop1:
+	    	mov rbx, qword [rbp + 8*(r9+3)] ; rbx = OPTi
+	    	MAKE_PAIR (r10, rbx, rdx) ;r10 = Pair(rbx, rdx)
+	    	mov rdx, r10
+	    	dec r9
+	    	dec rcx
+	    	jne optToListLoop1
+
+	    ;override last OPT with the opt list
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 3 ;;r9 = [rbp + 3*8] + 3  = index of last opt
+	   	mov qword [rbp + 8*r9], rdx
+
+	    ;shift frame - shift size is (optCount - 1)
+	    mov rcx, 4 + 0;rcx = frame size
+	    mov r12, rcx
+	    dec r12 ; r12 = index of last opt in stack
+	    mov r10, qword [rbp + 8*3]
+	    sub r10, 1 + 0 ; r10 = optCount - 1
+	    shiftStack1:
+	    	mov r8, qword [rbp+r12*8]
+	    	mov r13, r12
+	    	add r13 , r10
+	       	mov [rbp+ 8*r13], r8
+	    	dec r12 
+	    	dec rcx
+	    	jne shiftStack1
+
+
+	    mov rax, r10
+	    mov rbx, 8
+	    mul rbx
+	    add rbp, rax
+	    add rsp, rax 
+
+	    jmp fixN1
+
+	    shiftStackAndPushNil1:
+	    mov rcx, 4 + 0;rcx = frame size
+	    mov r12, 0 ; r12 = i
+	    shiftStackNil1:
+	    	mov r8, qword [rbp+r12*8]
+	       	mov [rbp+ 8*r12 - 8], r8
+	    	inc r12 
+	    	dec rcx
+	    	jne shiftStackNil1
+
+	    sub rbp, 8
+	    sub rsp, 8
+
+	    ;;push nil -- > check this!
+	    mov r8, SOB_NIL_ADDRESS
+
+	    ;override value *after* last opt with 
+	    mov r9, qword [rbp + 8 *3]
+	    add r9, 4 ;;r9 = [rbp + 3*8] + 4  = index of last opt
+	   	mov qword [rbp + 8*r9], r8
+
+	    ;fix n to be fixedParamsCount + 1:
+	  	fixN1:
+	 	mov qword [rbp + 3*8], 1
 ;varParam
  mov rax, qword [rbp + 8*(4 + 0)]
 leave
 ret
-Lcont0:
+Loptcont0:
  
- push rax
-push 2
-;varFree
-mov rax, qword [fvar_tbl+264]
 ;check if closure 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0
@@ -262,37 +338,6 @@ FinishedApplic0:
     call write_sob_if_not_void
 leave
  ret
-%macro SHIFT_FRAME_2 1
-        push rax
-        mov rax, qword[rbp+24] 
-        add rax, 4
-        mov rcx,rax
-        shl rcx, 3 
-        mov r13, 1  ;; %assign i 1
-        
-  ;%rep %1
-    %%loop_shift:  
-        cmp %1, 0
-        je %%loop_shift_end
-        dec rax
-        mov r14, r13  ;; r14 = i
-        shl r14,3     ;; r14 = 8 * i
-        mov r10, rbp  ;; r12 = rbp
-        sub r10, r14  ;; r12 = rbp-WORD_BYTES* i
-        ;;mov rdi, [rbp-WORD_BYTES* i]
-        mov rdi , [r10]
-        mov [rbp+WORD_BYTES*rax], rdi
-        dec %1
-        inc r13 ;%assign i i+1
-        jmp %%loop_shift
-    %%loop_shift_end:
-    ;%endrep
-    pop rax
-    add rsp, rcx
-    mov rbp, rsp
-%endmacro
-
-
 apply:
         push rbp
         mov rbp, rsp

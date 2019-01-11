@@ -495,7 +495,7 @@ let rec genCode exp deepCounter= match exp with
 	    sub rsp, 8
 
 	    ;;push nil -- > check this!
-	    mov r8, [SOB_NIL_ADDRESS]
+	    mov r8, SOB_NIL_ADDRESS
 
 	    ;override value *after* last opt with 
 	    mov r9, qword [rbp + 8 *3]
