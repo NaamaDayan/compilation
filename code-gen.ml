@@ -326,10 +326,10 @@ let rec genCode exp deepCounter= match exp with
 	    							   "mov qword [fvar_tbl+" ^ (fvar_address v fvars) ^ "], rax\n" ^
 	    							   "mov rax, SOB_VOID_ADDRESS"
 		| Seq'(lst) -> let f acc expr = ";seq\n" ^(acc ^ (genCode expr deepCounter) ^ "\n") in (List.fold_left f ""  lst)
-	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "Lexit" !orCounter) in
+	 	| Or'(lst) ->  let exitLabel = (makeNumberedLabel "LexitOr" !orCounter) in
 	 					let f  acc expr = acc ^ ((genCode expr deepCounter)^"\n cmp rax, SOB_FALSE_ADDRESS\n jne " ^ exitLabel ^ "\n") in
 	  						";or\n" ^ (List.fold_left f "" lst) ^ exitLabel ^ ":\n" ^ (incCounter orCounter)
-	    | If'(test,dit,dif) -> let exitLabel = (makeNumberedLabel "Lexit" !ifCounter) in
+	    | If'(test,dit,dif) -> let exitLabel = (makeNumberedLabel "LexitIf" !ifCounter) in
 	    					   let elseLabel = (makeNumberedLabel "Lelse" !ifCounter) in
 		    					   ";if\n" ^ 
 		    					   (genCode test deepCounter) ^ "\n" ^
@@ -366,6 +366,13 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
+	    (code_before_body envSize lcodeLabel lcontLabel "simple")^ "\n"^
+	    (genCode body (envSize+1)) ^ "\n" ^
+	    "leave\n" ^
+	    "ret\n" ^ 
+	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
+
+	    and code_before_body envSize lcodeLabel lcontLabel kind = 
 	    let envHandling =  
 	    	if (envSize == 0) then "MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, "^lcodeLabel^")\n"
 	    	else "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
@@ -374,21 +381,17 @@ let rec genCode exp deepCounter= match exp with
 	    		 (copyEnvLoop 0 envSize "") ^ "\n" ^ 
 	    		 "mov r13, qword [rbp+8*3] \n"^
 	    		 "MALLOC rdx, r13 ;number of params of prev env * 8\n" ^ 
-	    		 (copyParams) ^ "\n" ^
+	    		 (copyParams kind) ^ "\n" ^
 	    		 "mov qword [r9], rdx\n ;rdx is the params vector\n"
 	    			in
 	    envHandling ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
 	    "push rbp\n" ^
-	    "mov rbp, rsp\n" ^
-	    (genCode body (envSize+1)) ^ "\n" ^
-	    "leave\n" ^
-	    "ret\n" ^ 
-	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
+	    "mov rbp, rsp\n"
 
-	    and copyParams  = 
-	    	let copyParamsLoop = (makeNumberedLabel "copyParamsLoop" !copyParamsCounter) in
+	    and copyParams kind = 
+	    	let copyParamsLoop = (makeNumberedLabel ("copyParamsLoop" ^ kind) !copyParamsCounter) in
 	       "mov rcx, qword [rbp+3*8] ; rcx = param count
 	    	mov r12, 0 ; r12 = i 
 	       "^copyParamsLoop ^ ":
@@ -400,27 +403,7 @@ let rec genCode exp deepCounter= match exp with
 	    		dec rcx
 	    		jne " ^copyParamsLoop ^  (incCounter copyParamsCounter)
 
-	  (*  and lambdaCodeGen args body envSize =
-	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
-	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
-	    "mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer\n" ^
-	    (copyEnvLoop 0 envSize "") ^ "\n" ^ 
-	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params * 8\n" ^ 
-	    "mov qword [r9], rdx\n ;rdx is the params vector\n" ^
-	    (copyParams (List.length args)) ^ "\n" ^
-	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
-	    "jmp " ^ lcontLabel ^ "\n" ^
-	    lcodeLabel ^ ":\n "^
-	    "push rbp\n" ^
-	    "mov rbp, rsp\n" ^
-	    (genCode body (envSize+1)) ^ "\n" ^
-	    "leave\n" ^
-	    "ret\n" ^ 
-	    lcontLabel ^ ":\n " ^ (incCounter lambdaCounter)
-	*)
-		
-	 
+	
 	    
 	    (*r9[i+1] = rbx[i]*)
 	    and copyEnvLoop i envSize str = 
@@ -435,21 +418,8 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaOptCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Loptcode" !lambdaOptCounter) in
 	    let lcontLabel = (makeNumberedLabel "Loptcont" !lambdaOptCounter) in 
-	    "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
-	    "mov qword rbx, [rbp + 8 * 2] ;lexical env pointer\n" ^
-	    (copyEnvLoop 0 envSize "") ^ "\n" ^ 
-	    "MALLOC rdx, "^ (string_of_int ((List.length args)*8)) ^" ;number of params\n" ^ 
-	    "mov qword [r9], rdx\n" ^
-	    (copyParams ) ^ "\n" ^
-	    "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"^
-	    ";mov rax, [rax]\n"^
-	    "jmp " ^ lcontLabel ^ "\n" ^
-	    lcodeLabel ^ ":\n "^
-	    "push rbp ;;check this!!!! this is just a try! was after fix stack before!
-	    mov rbp, rsp\n" ^
+	    (code_before_body envSize lcodeLabel lcontLabel "opt") ^" \n"^
 	    (fixStack args) ^
-	    ";;;;;;push rbp\n" ^
-	    ";;;;;;mov rbp, rsp\n" ^
 	    (genCode body (envSize+1)) ^ "\n" ^
 	    "leave\n" ^
 	    "ret\n" ^ 
