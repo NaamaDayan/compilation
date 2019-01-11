@@ -64,8 +64,6 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 1
-MAKE_LITERAL_INT 2
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -77,8 +75,6 @@ MAKE_LITERAL_INT 2
 
 
 fvar_tbl:
-dq T_UNDEFINED
-dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -211,313 +207,13 @@ mov rbp, rsp
     mov [fvar_tbl + 248], rax
     MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cons)
     mov [fvar_tbl + 256], rax
-    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, apply)
-    mov [fvar_tbl + 264], rax
  ;;add rsp, 4*8
  ;;pop rbp
  ;;ret
  
  forDebug:
-;define(Var'(VarFree))
-;lambdaSimple
-MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
-jmp Lcont0
-Lcode0:
- push rbp
-mov rbp, rsp
-
-;lambdaSimple
-MALLOC r9, 16 ;r9 = extEnv pointer
-MAKE_CLOSURE (rax, r9, Lcode1)
-mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer
-;copyEnvLoop - r9[i+1] = rbx[i]:
-mov qword r8, [rbx + 0] ;go to lexical env , tmp val is in r8
-mov qword [r9 + 8], r8
-
-mov r13, qword [rbp+8*3] 
-MALLOC rdx, r13 ;number of params of prev env * 8
-mov rcx, qword [rbp+3*8] ; rcx = param count
-	    	mov r12, 0 ; r12 = i 
-	       copyParamsLoopSimple0:
-	       		cmp rcx, 0
-	       		je copyParamsEndLoopSimple0
-mov r13, r12
-	    		add r13, 4
-	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
-	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
-	    		inc r12
-	    		dec rcx
-	    		jmp copyParamsLoopSimple0
-copyParamsEndLoopSimple0:
-
-mov qword [r9], rdx
- ;rdx is the params vector
-jmp Lcont1
-Lcode1:
- push rbp
-mov rbp, rsp
-
-;applicTP
-;applic
-;const
-mov rax    , const_tbl + 1
- push rax
-;varBound
- mov rax, qword[rbp + 8*2]
-mov rax, qword [rax + 8 * 0]
-mov rax, qword [rax + 8 * 1]
- push rax
-push 2
-;varFree
-mov rax, qword [fvar_tbl+256]
-;check if closure 
-cmp byte [rax], T_CLOSURE
-jne NotAClosure0
-
-push qword [rax+TYPE_SIZE]  ;push env:
-call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
-
-;cleaning the stack 
-add rsp, 8*1 ; pop env
-pop rbx ; pop arg count
-shl rbx, 3 ; rbx = rbx * 8
-add rsp, rbx; pop args
-jmp FinishedApplic0
-
-NotAClosure0:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-FinishedApplic0:
-
- push rax
-;varBound
- mov rax, qword[rbp + 8*2]
-mov rax, qword [rax + 8 * 0]
-mov rax, qword [rax + 8 * 0]
- push rax
-push 2
-;varFree
-mov rax, qword [fvar_tbl+256]
-mov r13, rax ;save closure
-cmp byte [rax], T_CLOSURE
-jne NotAClosureTP0
-
-push qword [rax + TYPE_SIZE] ;push env
-push qword [rbp + WORD_BYTES*1] ;old ret address
-mov qword r10, [rbp] ; r10 = old old rbp
-mov r11, PARAM_COUNT ; save old param count 
-
-push rax
-mov rax, PARAM_COUNT
-add rax, 4
-mov rcx, 5 ;;check! maybe add 4 instead
-mov r12, 1
-LoopTP0:
-dec rax
-mov r8, rbp
-;push rax
-;mov rax, WORD_SIZE
-shl r12, 3
-sub r8, r12
-shr r12, 3
-;pop rax
-mov r8, [r8]  
-mov [rbp+WORD_BYTES*rax], r8
-inc r12
-dec rcx
-jnz LoopTP0
-
-pop rax
-;clean stack: add rsp , WORD_BYTES*(r11+4)
-;push rax
-;mov rax, WORD_SIZE
-add r11, 4
-shl r11,3
-add rsp, r11
-;pop rax
-
-;pop rax
-mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
-jmp [r13 + TYPE_SIZE + WORD_BYTES]
-NotAClosureTP0:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-
-leave
-ret
-Lcont1:
- 
-leave
-ret
-Lcont0:
- 
-mov qword [fvar_tbl+272], rax
-mov rax, SOB_VOID_ADDRESS
-    call write_sob_if_not_void
-
-
-;applic
-push 0
-;applic
-;const
-mov rax    , const_tbl + 15
- push rax
-;const
-mov rax    , const_tbl + 6
- push rax
-push 2
-;varFree
-mov rax, qword [fvar_tbl+272]
-;check if closure 
-cmp byte [rax], T_CLOSURE
-jne NotAClosure2
-
-push qword [rax+TYPE_SIZE]  ;push env:
-call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
-
-;cleaning the stack 
-add rsp, 8*1 ; pop env
-pop rbx ; pop arg count
-shl rbx, 3 ; rbx = rbx * 8
-add rsp, rbx; pop args
-jmp FinishedApplic2
-
-NotAClosure2:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-FinishedApplic2:
-
-;check if closure 
-cmp byte [rax], T_CLOSURE
-jne NotAClosure1
-
-push qword [rax+TYPE_SIZE]  ;push env:
-call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
-
-;cleaning the stack 
-add rsp, 8*1 ; pop env
-pop rbx ; pop arg count
-shl rbx, 3 ; rbx = rbx * 8
-add rsp, rbx; pop args
-jmp FinishedApplic1
-
-NotAClosure1:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-FinishedApplic1:
-
-    call write_sob_if_not_void
 leave
  ret
-apply:
-        push rbp
-        mov rbp, rsp
-        mov r12, 0 ;; we will use to count number of args in list
-        mov r11 , PARAM_COUNT
-        sub r11, 1
-        mov r10, PVAR(r11) ;; last argument is list -> rsi
-        .pushListToStack:
-         cmp byte [r10], T_NIL
-         je .endPushList
-    CAR r9, r10
-    CDR r10, r10
-    push r9
-    add r12, 1
-    jmp .pushListToStack
-
-.endPushList:
-    mov r8, 0 ;; we will use a counter
-    mov r9 , r12 
-    dec r9
-
-.reverseStack:
-    cmp r9, r8
-    jle .endReverse 
-    mov r15, [rsp + 8 * r9]
-    mov r14, [rsp + 8 * r8]
-    mov [rsp + 8 * r9], r14
-    mov [rsp + 8 * r8], r15
-    dec r9
-    inc r8
-    jmp .reverseStack
-    
-.endReverse:
-    mov rcx , qword [rbp + 8*3]
-    dec rcx ;remove proc arg
-    dec rcx ;remove list arg
-.pushRestArgs:
-    cmp rcx, 0 
-    jle .finishPushRest
-    push PVAR(rcx)
-    sub rcx, 1
-    jmp .pushRestArgs
-    
-.finishPushRest:
-    add r12, qword [rbp+8*3]
-    sub r12, 2
-    push r12 ;push arg count
-    mov rax, qword [rbp + 8*4] ; rax = closure
-    cmp byte [rax], T_CLOSURE
-    jne .exit
-    CLOSURE_ENV rdi,rax
-    push rdi ; push closure env
-    mov r15, qword [rbp] ; old rbp
-    push qword [rbp + 8] ; push ret 
- 
- 
- .shift_frame:
-    add r12 , 4
-push rax
-    mov rax, PARAM_COUNT
-    add rax, 4
-    mov r10, rax
-    shl r10, 3 ;r10 = 8*frame size, save for later
-    mov rcx, r12 ; loop index
-    mov r9, 1 
-  	
-    .loopLabel:
-    cmp rcx, 0
-    je .cleanStack
-    dec rcx
-    dec rax
-    mov r8, rbp
-    mov rdi, r9
-    shl rdi, 3
-  	sub r8, rdi
-  	mov r8, [r8] ;r8 = [rbp-i*8]
-        mov [rbp + 8*rax], r8
-  	inc r9
-  	jne .loopLabel
-    
-    .cleanStack:
-pop rax
-    add rsp, r10
-    mov rbp, rsp
-    
-  .end:  
-  mov rbp,r15
-  jmp qword [rax+TYPE_SIZE+WORD_BYTES] ;jmp code of closure
-  ;add rsp , 8 ; pop the env
-  ;pop r10 ; pop n
-  ;shl r10 , 3 ; rbx = rbx * 8
-  ;add rsp , r10 ;  pop args
-  ; jmp .endApply 
-.exit:
-mov rdi, 0;return code 0
-mov rax, 60 ; system call 60 is exit
-syscall 
-;.endApply:
-;leave
-;ret   
-
 
 is_boolean:
     push rbp
@@ -1440,9 +1136,10 @@ set_car:
     mov rbp, rsp
 
     mov rsi, PVAR(0) 
+    CAR rsi, rsi
     mov rdi, PVAR(1) ;new car
 
-    mov qword [rsi + TYPE_SIZE], rdi
+    mov [rsi], rdi
     mov rax, SOB_VOID_ADDRESS
 
     leave
@@ -1453,9 +1150,10 @@ set_cdr:
     mov rbp, rsp
 
     mov rsi, PVAR(0) 
+    CDR rsi, rsi
     mov rdi, PVAR(1) ;new cdr
 
-    mov qword [rsi + TYPE_SIZE + WORD_SIZE], rdi
+    mov [rsi], rdi
     mov rax, SOB_VOID_ADDRESS
 
     leave

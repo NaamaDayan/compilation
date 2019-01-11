@@ -1,0 +1,1 @@
+(define pro (lambda (x . y) x)) (pro 5)

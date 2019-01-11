@@ -66,7 +66,13 @@ void InitializingTests()
     testsFunctions.push_back(FINAL_PROJECT_TEST);
 
      // Defining tests
-    string test_1 = "";
+    string test_1 = R"V0G0N(   
+             (let ((x #f) (y #t))
+            (let ((x #f))
+              (let ((x #f) (z #f) (t #f))
+                (let ((x #f) (t #f))
+            y))))   
+    )V0G0N";
     string test_2 = "(define pro (lambda (x) x))"; //was 5.5
     string test_3 = "#t #f";
     string test_4 = "'()";
@@ -1513,7 +1519,7 @@ void InitializingTests()
     string test_71 = R"V0G0N(   
                 (append '(1) 2)
     )V0G0N";
-    string test_72 = R"V0G0N(   
+ /*   string test_72 = R"V0G0N(   
                 (apply (lambda (x y z) (list x y z)) "hello" "world" '("!"))     ; ("hello" . ("world" . ("!" . ())))
     )V0G0N";
     string test_73 = R"V0G0N(   
@@ -1536,21 +1542,18 @@ void InitializingTests()
     )V0G0N";
     string test_79 = R"V0G0N(   
                 (define fact-tail (lambda (n acc) (if (= 1 n) acc (fact-tail (- n 1) (* n acc))))) (apply fact-tail '(5 1))                    ; 120
-    )V0G0N";
+    )V0G0N";*/
     string test_80 = R"V0G0N(   
                 (define tail_test (lambda (n1) ((lambda (n2 n3) (+ n1 n3)) 10 15))) (tail_test 1)                               ; 16
     )V0G0N";
-    string test_81 = R"V0G0N(   
+    /*string test_81 = R"V0G0N(   
                 (define tail_test (lambda (n1) ((lambda (n2 n3) (+ n1 n3)) 10 15))) (apply tail_test '(1))                      ; 16
     )V0G0N";
     string test_82 = R"V0G0N(   
                 (define tail_test (lambda (n1) ((lambda (n2 n3) (+ n1 n3)) 10 15))) (apply tail_test '(2))
-    )V0G0N"; 
-    string test_83 = /*R"V0G0N(   
-                (apply (lambda x x) '())                                     ; #t
-    )V0G0N"*/
-    R"V0G0N(   
-                ((lambda x x) )                                     ; #t
+    )V0G0N"; */
+    string test_83 = R"V0G0N(   
+                (< 11)                                      ; #t
     )V0G0N";
     string test_84 = R"V0G0N(   
                 (< 1 2)                                     ; #t
@@ -1759,7 +1762,7 @@ void InitializingTests()
     string test_152 = R"V0G0N(   
                 (eq? 'ab 'ab)                               ; #t
     )V0G0N";
-    string test_153 = R"V0G0N( 
+   /* string test_153 = R"V0G0N( 
                
               (define x1 (lambda () '()))           
               (define x2 (lambda (y1) '(y1)))          
@@ -1775,11 +1778,11 @@ void InitializingTests()
               (x4 1 2 3)
               (x5 1 2 3 4)
               (x6 1 2 3 4 5)
-    )V0G0N";
+    )V0G0N"; */
     string test_154 = R"V0G0N(   
                 (eq? '(1 2) '(1))                           ; #f
     )V0G0N";
-    string test_155 = R"V0G0N(   
+   /* string test_155 = R"V0G0N(   
               (define x1 (lambda y y))           
               (define x2 (lambda (y1 . y2) `(y1 ,@y2)))          
               (define x3 (lambda (y1 y2 . y3) `(y1 y2 ,@y3)))
@@ -1795,7 +1798,7 @@ void InitializingTests()
               (x4 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30)
               (x5 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40)
               (x6 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50)
-    )V0G0N";
+    )V0G0N"; */
     string test_156 = R"V0G0N(   
                 (eq? '#(vector) '#(list))
     )V0G0N";
@@ -1994,7 +1997,7 @@ void InitializingTests()
     string test_218 = R"V0G0N(   
               (zero? (- 5 (+ 1 2 2)))  
     )V0G0N";
-    string test_219 = R"V0G0N(   
+  /*  string test_219 = R"V0G0N(   
               (define fact (lambda (n)
                 (if (zero? n)
                 1
@@ -2016,22 +2019,31 @@ void InitializingTests()
     )V0G0N";
     string test_221 = R"V0G0N(   
                 ; Checking env working properly
-                (define x (lambda (x1 x2) 
-                              (lambda () 
-                                    `(,x1 ,x2)
-                                )   
-                 
-                 ))
-                ((x 1 2))
-    )V0G0N"
-    /*R"V0G0N(
-            ((lambda () (integer? 8)))
-    )V0G0N"
-    R"V0G0N(
-            ((lambda() ((lambda (a b c d e)
-            e)
-            'a 'b 'c 'd 'e)))
-    )V0G0N"*/;
+                (define x (lambda (x1 x2 x3 x4 x5 x6 x7 x8 x9 x10) 
+                              (lambda (y1 y2 y3 y4 y5 y6 y7 y8 y9 y10) 
+                                    (lambda (z1 z2 z3 z4 z5 z6 z7 z8 z9 z10) 
+                                        (lambda (k1 k2 k3 k4 k5 k6 k7 k8 k9 k10) 
+                                            (lambda (l1 l2 l3 l4 l5 l6 l7 l8 l9 l10) 
+                                                 (lambda (h1 h2 h3 h4 h5 h6 h7 h8 h9 h10) 
+                                                    `(,x1 ,x2 ,x3 ,x4 ,x5 ,x6 ,x7 ,x8 ,x9 ,x10
+                                                      ,y1 ,y2 ,y3 ,y4 ,y5 ,y6 ,y7 ,y8 ,y9 ,y10
+                                                      ,z1 ,z2 ,z3 ,z4 ,z5 ,z6 ,z7 ,z8 ,z9 ,z10
+                                                      ,k1 ,k2 ,k3 ,k4 ,k5 ,k6 ,k7 ,k8 ,k9 ,k10
+                                                      ,l1 ,l2 ,l3 ,l4 ,l5 ,l6 ,l7 ,l8 ,l9 ,l10
+                                                      ,h1 ,h2 ,h3 ,h4 ,h5 ,h6 ,h7 ,h8 ,h9 ,h10
+                                                  )
+                                            )
+                                
+                                        ) 
+                                
+                                   ) 
+                                
+                             ) 
+                          )   
+                 )
+)
+                ((((((x 1 2 3 4 5 6 7 8 9 10) 11 12 13 14 15 16 17 18 19 20) 21 22 23 24 25 26 27 28 29 30) 31 32 33 34 35 36 37 38 39 40) 41 42 43 44 45 46 47 48 49 50) 51 52 53 54 55 56 57 58 59 60)
+    )V0G0N";
     string test_222 = R"V0G0N(   
                     ; Checking env working properly
                   (define x (lambda (x1 x2 x3 x4 x5 x6 x7 x8 x9 . x10) 
@@ -2440,7 +2452,7 @@ void InitializingTests()
                 (return-free-variable))))
 
                 (get-scope)
-    )V0G0N"; 
+    )V0G0N"; */
     string test_240 = R"V0G0N( 
         (equal? "  \n \t \r \f  " "  \n \t \r \f  ")
     
@@ -5574,7 +5586,7 @@ void InitializingTests()
     )V0G0N";
 
     // Adding Tests
-    /*testsCodes.push_back(test_0);
+    testsCodes.push_back(test_0);
     testsCodes.push_back(test_1);
     testsCodes.push_back(test_2);
     testsCodes.push_back(test_3);
@@ -5639,25 +5651,25 @@ void InitializingTests()
     testsCodes.push_back(test_62);
     testsCodes.push_back(test_63);
     testsCodes.push_back(test_64);
-    testsCodes.push_back(test_65);
+    /*testsCodes.push_back(test_65);
     testsCodes.push_back(test_66);
     testsCodes.push_back(test_67);
     testsCodes.push_back(test_68);
     testsCodes.push_back(test_69);
     testsCodes.push_back(test_70);
     testsCodes.push_back(test_71);
-    testsCodes.push_back(test_72);
+    /*testsCodes.push_back(test_72);
     testsCodes.push_back(test_73);
     testsCodes.push_back(test_74);
     testsCodes.push_back(test_75);
     testsCodes.push_back(test_76);
     testsCodes.push_back(test_77);
     testsCodes.push_back(test_78);
-    testsCodes.push_back(test_79);
-    testsCodes.push_back(test_80);
-    testsCodes.push_back(test_81);
-    testsCodes.push_back(test_82);
-    testsCodes.push_back(test_83);
+    testsCodes.push_back(test_79);*/
+  //  testsCodes.push_back(test_80);
+    //testsCodes.push_back(test_81);
+    //testsCodes.push_back(test_82);
+ /*   testsCodes.push_back(test_83);
     testsCodes.push_back(test_84);
     testsCodes.push_back(test_85);
     testsCodes.push_back(test_86);
@@ -5727,9 +5739,9 @@ void InitializingTests()
     testsCodes.push_back(test_150);
     testsCodes.push_back(test_151);
     testsCodes.push_back(test_152);
-    testsCodes.push_back(test_153);
+   // testsCodes.push_back(test_153);
     testsCodes.push_back(test_154);
-    testsCodes.push_back(test_155);
+   // testsCodes.push_back(test_155);*/
     testsCodes.push_back(test_156);
     testsCodes.push_back(test_157);
     testsCodes.push_back(test_158);
@@ -5793,15 +5805,15 @@ void InitializingTests()
     testsCodes.push_back(test_216);
     testsCodes.push_back(test_217);
     testsCodes.push_back(test_218);
-    testsCodes.push_back(test_219);
-    testsCodes.push_back(test_220);*/
+    /*testsCodes.push_back(test_219);
+    testsCodes.push_back(test_220);
     testsCodes.push_back(test_221);
     testsCodes.push_back(test_222);
     testsCodes.push_back(test_223);
     testsCodes.push_back(test_224);
     testsCodes.push_back(test_225);
     testsCodes.push_back(test_226);
-   /* testsCodes.push_back(test_227);
+    testsCodes.push_back(test_227);
     testsCodes.push_back(test_228);
     testsCodes.push_back(test_229);
     testsCodes.push_back(test_230);
@@ -5813,9 +5825,9 @@ void InitializingTests()
     testsCodes.push_back(test_236);
     testsCodes.push_back(test_237);
     testsCodes.push_back(test_238);
-    testsCodes.push_back(test_239);
+    testsCodes.push_back(test_239);*/
     testsCodes.push_back(test_240);
-    testsCodes.push_back(test_241);
+   /* testsCodes.push_back(test_241);
     testsCodes.push_back(test_242);
     testsCodes.push_back(test_243);
     testsCodes.push_back(test_244);
