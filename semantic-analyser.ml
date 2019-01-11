@@ -7,6 +7,8 @@
 
 #use "reader.ml";;
 #use "tag-parser.ml";;
+open Reader
+open Tag_Parser
 
 type var = 
   | VarFree of string
@@ -70,6 +72,15 @@ end;;
 module Semantics : SEMANTICS = struct
 
 (* ************************    Utilities ****************************************************************** *)
+
+let print_list f lst =
+  let rec print_elements = function
+    | [] -> ()
+    | h::t -> f h; print_string ";"; print_elements t
+  in
+  print_string "[";
+  print_elements lst;
+  print_string "]";;
 
 let rec print_sexpr = fun sexprObj ->
   match sexprObj  with
@@ -294,103 +305,21 @@ and applicHandler app args isTail=
 
 
 let annotate_tail_calls e = tail_calls e false;;
-
-let counter = ref 0 ;; (*maybe box *)
-
-let appendReadWrites lst = 
-	let rec f lst reads writes = match lst with
-	| [] -> (reads, writes)
-	| (param, read,write) :: tail ->  f tail (reads @ read) (writes @ write)
-in (f lst [] []);;
-
-let rec checkBodyReadWrites inner_body params param reads writes f localCounter= 
-    let boxed_inner_body = lambdaBoxHandler inner_body params in 
-    if (List.mem param params) 
-        then (param, reads, writes) 
-    else 
-        let (name, body_reads, body_writes) = (f boxed_inner_body) in 
-        let toRetReads = ref reads in
-        let toRetWrites = ref writes in
-            if (List.length body_reads >0) then 
-                toRetReads := !toRetReads @ [localCounter]; 
-            if (List.length body_writes >0) then 
-                toRetWrites := !toRetWrites @ [localCounter];
-            (param, !toRetReads, !toRetWrites)
+let counter = ref 0;;
+let read_counter = ref 0 ;; (*maybe box *)
+let write_counter = ref 0 ;; (*maybe box *)
 
 
-(*params:[x] body: (LambdaSimple([  ],VarBound("x" 0 0)) reads [] writes []*)
-and boxHandler body param reads writes localCounter =(* print_string "entered boxHandler\n";*)
-	let f expr = (boxHandler expr param reads writes localCounter) in
-	let f2 lst = let (reads_, writes_) = appendReadWrites (List.map f lst) in (param, reads_, writes_) in
-	match body with
-	| Const'(expr) -> (param, reads, writes)
-	| Var'(VarFree(expr)) -> (param, reads, writes)
-	| Var'(VarParam(expr, pos)) -> if (compare expr param) == 0 then (param, [-1], writes) else (param, reads, writes)
-	| Var'(VarBound(expr, major, minor)) -> if ((compare expr param) == 0 (*&& major == 0*)) then (param,[-1], writes) else (param,reads, writes)
-	| If' (test ,dit , dif) -> (f2 [test;dit;dif])
-	| Seq' (lst) -> (f2 lst)
-	| Set' (Var'(variable), value) ->  let (param, reads_val, writes_val) = (f value) in if (compare (getVarName variable) param) == 0 then (param, reads_val, [-1])  else (param, reads_val, writes_val) 
-	| Def' (variable, value) -> (f2 [variable;value])
-	| Or' (lst) -> (f2 lst)
-	| LambdaSimple' (params, inner_body) -> counter := !counter + 1; (checkBodyReadWrites inner_body params param reads writes f !counter)
-	| LambdaOpt' (params, opt ,inner_body) ->  counter :=  !counter + 1; (checkBodyReadWrites inner_body (params@[opt]) param reads writes f !counter)
-	| Applic' (expr, args) -> f2 ([expr] @ args)
-	| ApplicTP'(expr, args)-> f2 ([expr] @ args)
-	| Box'(variable) -> (param,reads, writes)
-    | BoxGet'(variable) -> (param,reads, writes)
-    | BoxSet'(variable, expr) -> (param,reads, writes)
-    | _ -> raise X_syntax_error
-
-(*body: VarBound("x" 0 0)) namesToBox: []*)
-and boxBody body namesToBox =
-	let f expr = boxBody expr namesToBox in 
-	match body with
-	| Const'(expr) ->Const'(expr)
-	| Var'(VarFree(expr)) -> Var'(VarFree(expr))
-	| Var'(VarParam(name, pos)) -> if (List.mem name namesToBox) then BoxGet'(VarParam(name, pos)) else Var'(VarParam(name, pos))
-	| Var'(VarBound(name, major, minor)) -> if (List.mem name namesToBox) then BoxGet'(VarBound(name, major, minor)) else Var'(VarBound(name, major, minor))
-	| If' (test ,dit , dif) -> If'( (f test), (f dit), (f dif))
-	| Seq'(lst) -> Seq'(List.map f lst)
-	| Set' (Var'(variable), value) -> if (List.mem (getVarName variable) namesToBox) then BoxSet'(variable, (f value)) else Set'(Var'(variable), (f value))
-	| Def' (Var'(variable), value) -> let newNamesToBox = (diff namesToBox [(getVarName variable)]) in Def'(Var'(variable), (boxBody value newNamesToBox))
-	| Or' (lst) -> Or'(List.map f lst)
-	| LambdaSimple' (params, inner_body) -> let newVarsToBox = (diff namesToBox params) in LambdaSimple' (params, (boxBody inner_body newVarsToBox))
-	(* attention! - newVarsToBox take care of shadowing variables in nested lambdas *)
-	| LambdaOpt' (params, opt ,inner_body) ->   let newVarsToBox = (diff namesToBox (params @ [opt])) in LambdaOpt' (params, opt, (boxBody inner_body newVarsToBox))
-	| Applic' (expr, args) -> Applic'((f expr),(List.map f args))
-	| ApplicTP'(expr, args)-> ApplicTP'((f expr),(List.map f args))
-	| Box'(variable) -> Box'(variable)
-    | BoxGet'(variable) -> BoxGet'(variable)
-    | BoxSet'(variable, expr) -> BoxSet'(variable, expr)
-	| _ -> raise X_syntax_error
-
-and generateSetStatement name minor = Set'(Var'(VarParam(name, minor)), Box'(VarParam(name, minor))) 
-
-
-(*params:[] body: VarBound("x" 0 0)*)
-and lambdaBoxHandler body params = 
-(*print_string "entered lambda_box_handler\n";*)
-	let f param = (boxHandler body param [] [] counter) in (*check if box is needed *)
- 	let f2 threesome = match threesome with
- 		| (name, reads, writes) -> let guard = isBoxNeeded (cartesian reads writes) in if guard then name else "" in
- 	let f4 nameToBox = (generateSetStatement nameToBox (getElementIndex nameToBox params)) in
- 	let readWritesLists = List.map f params in (*list of pairs of reads and writes for each param - [(n,[1;2],[3;4;5]); (u,[4;5],[])] *)
-	(*printThreesomesList readWritesLists; *)(*TODO: delete this. for DEBUG*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*) 
-	let namesToBox = List.map f2 readWritesLists in
-	let filteredNames = List.filter (function(x) -> (compare x "") != 0) namesToBox in
-	(*print_string "\n filtered names(vars to box): ";printStringList filteredNames; print_string "\n";  
-	printIsEmptyList filteredNames;*)
-	if (List.length filteredNames == 0) then (box_set body) else let boxedBody = boxBody body filteredNames in Seq'((List.map f4 filteredNames) @ [boxedBody])
-
-
-and function_B param body = 
+let rec function_B param body = 
+write_counter := 0;
 let writes = function_C body param  in
+read_counter := 0;
 let reads = function_D body param in
 isBoxNeeded (cartesian reads writes)
 
 
 (* writes *)
-and function_C body param =
+and function_C body param = 
 	let f expr = (function_C expr param ) in
 	let f2 lst = let func acc expr = acc @ expr in List.fold_left func [] (List.map f lst) in 
 	match body with
@@ -401,8 +330,8 @@ and function_C body param =
 	| Set' (Var'(variable), value) ->  let  boxArray = (f value) in if (expr'_eq (Var'(variable))) param then ([-1] @ boxArray)  else boxArray
 	| Def' (variable, value) -> (f2 [variable;value])
 	| Or' (lst) -> (f2 lst)
-	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_C inner_body param)
-	| LambdaOpt' (params, opt ,inner_body) ->  (boxesOfLambda function_C inner_body param)
+	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_C inner_body param write_counter)
+	| LambdaOpt' (params, opt ,inner_body) ->  (boxesOfLambda function_C inner_body param write_counter)
 	| Applic' (expr, args) -> f2 ([expr] @ args)
 	| ApplicTP'(expr, args)-> f2 ([expr] @ args)
 	| Box'(variable) -> []
@@ -411,7 +340,7 @@ and function_C body param =
     | _ -> raise X_syntax_error
 
 (*reads*)
-and function_D body param =
+and function_D body param = 
 	let f expr = (function_D expr param ) in
 	let f2 lst = let func acc expr = acc @ expr in List.fold_left func [] (List.map f lst) in 
 	match body with
@@ -419,11 +348,11 @@ and function_D body param =
 	| Var'(v) -> if (expr'_eq (Var'(v)) param) then [-1] else []
 	| If' (test ,dit , dif) -> (f2 [test;dit;dif])
 	| Seq' (lst) -> (f2 lst)
-	| Set' (Var'(variable), value) -> (f2 [Var'(variable);value])
+	| Set' (Var'(variable), value) -> (f value)
 	| Def' (variable, value) -> (f2 [variable;value])
 	| Or' (lst) -> (f2 lst)
-	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_D inner_body param)
-	| LambdaOpt' (params, opt ,inner_body) ->   (boxesOfLambda function_D inner_body param)
+	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_D inner_body param read_counter)
+	| LambdaOpt' (params, opt ,inner_body) ->   (boxesOfLambda function_D inner_body param read_counter)
 	| Applic' (expr, args) -> f2 ([expr] @ args)
 	| ApplicTP'(expr, args)-> f2 ([expr] @ args)
 	| Box'(variable) -> []
@@ -432,23 +361,24 @@ and function_D body param =
     | _ -> raise X_syntax_error
 
 (* return array with reads/writes according to f given*)
-and boxesOfLambda f inner_body param = 
+and boxesOfLambda f inner_body param counter= 
 	counter := !counter + 1; 
 	let n = !counter in 
 	let boxedBody = f inner_body (extendVar param) in if (List.length boxedBody = 0) then [] else [n]
 
 
+
 (*return list of vars to box as var'(varparam())*)
 and checkBoxToLambdaParams params body = 
-	let rec f i restParams varsToBox = match params with 
+	let rec f i restParams varsToBox = match restParams with 
 	| [] -> varsToBox
 	| head :: tail -> if (function_B (Var'(VarParam(head, i))) body) then (f (i+1) tail (varsToBox @ [Var'(VarParam(head,i))])) else (f (i+1) tail  varsToBox)
 in (f 0 params [])
 
 and generateLambdaBody params body varsToBox = 
-let extVars = extendEnvOfVars varsToBox in
+let extVars = extendEnvOfVars varsToBox in 
 let updatedVarsToBox = (checkBoxToLambdaParams params body) in 
-let boxedBody = (function_A body (updatedVarsToBox @ extVars)) in
+let boxedBody = (function_A body (updatedVarsToBox @ extVars)) in 
 let generateSet varP = handleVar varP in
 let sets = (List.map generateSet updatedVarsToBox) in
 if (List.length sets) = 0 then boxedBody else Seq'((sets @ [boxedBody]))
@@ -468,44 +398,29 @@ and extendVar v = match v with
 	| _ -> raise X_syntax_error
 
 and function_A e varsToBox =
+let f e = function_A e varsToBox in
 match e with 
 	| Const'(expr) ->  Const'(expr)
 	| Var'(name) -> if (List.mem e varsToBox) then (BoxGet' name) else (Var'(name))
-	| If' (test ,dit , dif) -> If' ((box_set test),(box_set dit) ,(box_set dif))
-	| Seq' (lst) ->  Seq' (List.map box_set lst)
+	| If' (test ,dit , dif) -> If' ((f test),(f dit) ,(f dif))
+	| Seq' (lst) ->  Seq' (List.map f lst)
 	| Set' (Var'(v), value) -> let boxedVal = function_A value varsToBox in if (List.mem (Var'(v)) varsToBox) then (BoxSet'(v, boxedVal)) else (Set'(Var'(v), boxedVal))
-	| Def' (variable, value) ->  Def' ((box_set variable), (box_set value))
-	| Or' (lst) ->  Or' ((List.map box_set lst))
-	| LambdaSimple' (params, body) -> LambdaSimple'(params, (generateLambdaBody params body varsToBox))
+	| Def' (variable, value) ->  Def' ((f variable), (f value))
+	| Or' (lst) ->  Or' ((List.map f lst))
+	| LambdaSimple' (params, body) ->  LambdaSimple'(params, (generateLambdaBody params body varsToBox))
 	| LambdaOpt' (params, opt ,body) -> LambdaOpt'(params, opt, (generateLambdaBody (params@[opt]) body varsToBox))
-	| Applic' (expr, args) -> Applic' ((box_set expr),(List.map box_set args))
-	| ApplicTP'(expr, args)-> ApplicTP' ((box_set expr),(List.map box_set args))
+	| Applic' (expr, args) -> Applic' ((f expr),(List.map f args))
+	| ApplicTP'(expr, args)-> ApplicTP' ((f expr),(List.map f args))
 	| _ -> raise X_syntax_error
 	(*todo: maybe add box *)
 
 and box_set e = function_A e [] ;;
-(*match e with 
-	| Const'(expr) ->  Const'(expr)
-	| Var'(name) -> Var'(name)
-	| If' (test ,dit , dif) -> If' ((box_set test),(box_set dit) ,(box_set dif))
-	| Seq' (lst) ->  Seq' (List.map box_set lst)
-	| Set' (variable, value) -> Set' ((box_set variable), (box_set value))
-	| Def' (variable, value) ->  Def' ((box_set variable), (box_set value))
-	| Or' (lst) ->  Or' ((List.map box_set lst))
-	| LambdaSimple' (params, body) -> LambdaSimple' (params, (lambdaBoxHandler body params))
-	| LambdaOpt' (params, opt ,body) -> LambdaOpt' (params, opt, (lambdaBoxHandler body (params @[opt]) ))
-	| Applic' (expr, args) -> Applic' ((box_set expr),(List.map box_set args))
-	| ApplicTP'(expr, args)-> ApplicTP' ((box_set expr),(List.map box_set args))
-	| _ -> raise X_syntax_error;;
-	(*todo: maybe add box *)
-*)
+
 
 let run_semantics expr =
   box_set
     (annotate_tail_calls
        (annotate_lexical_addresses expr));;
 
-List.map run_semantics (Tag_Parser.tag_parse_expressions
-                            (Reader.read_sexprs "1"));;
 
 end;; (* struct Semantics *)
