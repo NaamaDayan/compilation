@@ -383,9 +383,108 @@ and lambdaBoxHandler body params =
 	if (List.length filteredNames == 0) then (box_set body) else let boxedBody = boxBody body filteredNames in Seq'((List.map f4 filteredNames) @ [boxedBody])
 
 
+and function_B param body = 
+let writes = function_C body param  in
+let reads = function_D body param in
+isBoxNeeded (cartesian reads writes)
 
-and box_set e =
+
+(* writes *)
+and function_C body param =
+	let f expr = (function_C expr param ) in
+	let f2 lst = let func acc expr = acc @ expr in List.fold_left func [] (List.map f lst) in 
+	match body with
+	| Const'(expr) -> []
+	| Var'(v) -> []
+	| If' (test ,dit , dif) -> (f2 [test;dit;dif])
+	| Seq' (lst) -> (f2 lst)
+	| Set' (Var'(variable), value) ->  let  boxArray = (f value) in if (expr'_eq (Var'(variable))) param then ([-1] @ boxArray)  else boxArray
+	| Def' (variable, value) -> (f2 [variable;value])
+	| Or' (lst) -> (f2 lst)
+	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_C inner_body param)
+	| LambdaOpt' (params, opt ,inner_body) ->  (boxesOfLambda function_C inner_body param)
+	| Applic' (expr, args) -> f2 ([expr] @ args)
+	| ApplicTP'(expr, args)-> f2 ([expr] @ args)
+	| Box'(variable) -> []
+    | BoxGet'(variable) -> []
+    | BoxSet'(variable, expr) -> (f expr)
+    | _ -> raise X_syntax_error
+
+(*reads*)
+and function_D body param =
+	let f expr = (function_D expr param ) in
+	let f2 lst = let func acc expr = acc @ expr in List.fold_left func [] (List.map f lst) in 
+	match body with
+	| Const'(expr) -> []
+	| Var'(v) -> if (expr'_eq (Var'(v)) param) then [-1] else []
+	| If' (test ,dit , dif) -> (f2 [test;dit;dif])
+	| Seq' (lst) -> (f2 lst)
+	| Set' (Var'(variable), value) -> (f2 [Var'(variable);value])
+	| Def' (variable, value) -> (f2 [variable;value])
+	| Or' (lst) -> (f2 lst)
+	| LambdaSimple' (params, inner_body) -> (boxesOfLambda function_D inner_body param)
+	| LambdaOpt' (params, opt ,inner_body) ->   (boxesOfLambda function_D inner_body param)
+	| Applic' (expr, args) -> f2 ([expr] @ args)
+	| ApplicTP'(expr, args)-> f2 ([expr] @ args)
+	| Box'(variable) -> []
+    | BoxGet'(variable) -> []
+    | BoxSet'(variable, expr) -> (f expr)
+    | _ -> raise X_syntax_error
+
+(* return array with reads/writes according to f given*)
+and boxesOfLambda f inner_body param = 
+	counter := !counter + 1; 
+	let n = !counter in 
+	let boxedBody = f inner_body (extendVar param) in if (List.length boxedBody = 0) then [] else [n]
+
+
+(*return list of vars to box as var'(varparam())*)
+and checkBoxToLambdaParams params body = 
+	let rec f i restParams varsToBox = match params with 
+	| [] -> varsToBox
+	| head :: tail -> if (function_B (Var'(VarParam(head, i))) body) then (f (i+1) tail (varsToBox @ [Var'(VarParam(head,i))])) else (f (i+1) tail  varsToBox)
+in (f 0 params [])
+
+and generateLambdaBody params body varsToBox = 
+let extVars = extendEnvOfVars varsToBox in
+let updatedVarsToBox = (checkBoxToLambdaParams params body) in 
+let boxedBody = (function_A body (updatedVarsToBox @ extVars)) in
+let generateSet varP = handleVar varP in
+let sets = (List.map generateSet updatedVarsToBox) in
+if (List.length sets) = 0 then boxedBody else Seq'((sets @ [boxedBody]))
+
+and handleVar varP = match varP with
+	| Var'(VarParam(v,minor)) -> Set'(varP, Box'(VarParam(v,minor)))
+	| _ -> raise X_syntax_error 
+
+and extendEnvOfVars varsToBox = 
+	match varsToBox with 
+	| [] -> []
+	| head :: tail -> 	[extendVar head] @ (extendEnvOfVars tail)
+
+and extendVar v = match v with
+	| Var'(VarParam(s, minor)) -> Var'(VarBound(s, 0, minor))	
+	| Var'(VarBound (s, major, minor)) -> Var'(VarBound(s, (major+1), minor))
+	| _ -> raise X_syntax_error
+
+and function_A e varsToBox =
 match e with 
+	| Const'(expr) ->  Const'(expr)
+	| Var'(name) -> if (List.mem e varsToBox) then (BoxGet' name) else (Var'(name))
+	| If' (test ,dit , dif) -> If' ((box_set test),(box_set dit) ,(box_set dif))
+	| Seq' (lst) ->  Seq' (List.map box_set lst)
+	| Set' (Var'(v), value) -> let boxedVal = function_A value varsToBox in if (List.mem (Var'(v)) varsToBox) then (BoxSet'(v, boxedVal)) else (Set'(Var'(v), boxedVal))
+	| Def' (variable, value) ->  Def' ((box_set variable), (box_set value))
+	| Or' (lst) ->  Or' ((List.map box_set lst))
+	| LambdaSimple' (params, body) -> LambdaSimple'(params, (generateLambdaBody params body varsToBox))
+	| LambdaOpt' (params, opt ,body) -> LambdaOpt'(params, opt, (generateLambdaBody (params@[opt]) body varsToBox))
+	| Applic' (expr, args) -> Applic' ((box_set expr),(List.map box_set args))
+	| ApplicTP'(expr, args)-> ApplicTP' ((box_set expr),(List.map box_set args))
+	| _ -> raise X_syntax_error
+	(*todo: maybe add box *)
+
+and box_set e = function_A e [] ;;
+(*match e with 
 	| Const'(expr) ->  Const'(expr)
 	| Var'(name) -> Var'(name)
 	| If' (test ,dit , dif) -> If' ((box_set test),(box_set dit) ,(box_set dif))
@@ -399,7 +498,7 @@ match e with
 	| ApplicTP'(expr, args)-> ApplicTP' ((box_set expr),(List.map box_set args))
 	| _ -> raise X_syntax_error;;
 	(*todo: maybe add box *)
-
+*)
 
 let run_semantics expr =
   box_set
