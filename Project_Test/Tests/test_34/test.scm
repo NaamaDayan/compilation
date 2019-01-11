@@ -1,3 +1,0 @@
-   
-             '('''a)                                   ; quote madness    
-    

@@ -172,10 +172,9 @@ set_car:
     mov rbp, rsp
 
     mov rsi, PVAR(0) 
-    CAR rsi, rsi
     mov rdi, PVAR(1) ;new car
 
-    mov [rsi], rdi
+    mov qword [rsi + TYPE_SIZE], rdi
     mov rax, SOB_VOID_ADDRESS
 
     leave
@@ -186,10 +185,9 @@ set_cdr:
     mov rbp, rsp
 
     mov rsi, PVAR(0) 
-    CDR rsi, rsi
     mov rdi, PVAR(1) ;new cdr
 
-    mov [rsi], rdi
+    mov qword [rsi + TYPE_SIZE + WORD_SIZE], rdi
     mov rax, SOB_VOID_ADDRESS
 
     leave
