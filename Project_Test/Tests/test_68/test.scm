@@ -1,3 +1,0 @@
-   
-                (integer? cons)
-    

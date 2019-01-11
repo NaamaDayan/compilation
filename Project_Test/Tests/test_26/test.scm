@@ -1,1 +1,0 @@
-(define pro (lambda (f x) (f x)))(define tail (lambda x x))(pro tail 5)

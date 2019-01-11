@@ -366,7 +366,7 @@ let rec genCode exp deepCounter= match exp with
 	    and lambdaCodeGen args body envSize =
 	    let lcodeLabel = (makeNumberedLabel "Lcode" !lambdaCounter) in
 	    let lcontLabel = (makeNumberedLabel "Lcont" !lambdaCounter) in 
-	    (code_before_body envSize lcodeLabel lcontLabel "simple")^ "\n"^
+	    (code_before_body envSize lcodeLabel lcontLabel "Simple")^ "\n"^
 	    (genCode body (envSize+1)) ^ "\n" ^
 	    "leave\n" ^
 	    "ret\n" ^ 
@@ -392,16 +392,20 @@ let rec genCode exp deepCounter= match exp with
 
 	    and copyParams kind = 
 	    	let copyParamsLoop = (makeNumberedLabel ("copyParamsLoop" ^ kind) !copyParamsCounter) in
+	    	let copyParamsEndLoop = (makeNumberedLabel ("copyParamsEndLoop" ^ kind) !copyParamsCounter) in
 	       "mov rcx, qword [rbp+3*8] ; rcx = param count
 	    	mov r12, 0 ; r12 = i 
 	       "^copyParamsLoop ^ ":
-	    		mov r13, r12
+	       		cmp rcx, 0
+	       		je " ^ copyParamsEndLoop ^ "\n" ^
+	    		"mov r13, r12
 	    		add r13, 4
 	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
 	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
 	    		inc r12
 	    		dec rcx
-	    		jne " ^copyParamsLoop ^  (incCounter copyParamsCounter)
+	    		jmp " ^copyParamsLoop ^ "\n" ^
+	    	copyParamsEndLoop ^ ":\n" ^  (incCounter copyParamsCounter)
 
 	
 	    
@@ -416,23 +420,23 @@ let rec genCode exp deepCounter= match exp with
 	    	str
 
 	    and lambdaOptCodeGen args body envSize =
-	    let lcodeLabel = (makeNumberedLabel "Loptcode" !lambdaOptCounter) in
-	    let lcontLabel = (makeNumberedLabel "Loptcont" !lambdaOptCounter) in 
-	    (code_before_body envSize lcodeLabel lcontLabel "opt") ^" \n"^
-	    (fixStack args) ^
-	    (genCode body (envSize+1)) ^ "\n" ^
+	    let num = !lambdaOptCounter in
+	    let lcodeLabel = (makeNumberedLabel "Lcode" num) in
+	    let lcontLabel = (makeNumberedLabel "Lcont" num) in 
+	    (lambdaOptCounter := !lambdaOptCounter + 1) ; (code_before_body envSize lcodeLabel lcontLabel "Opt") ^" \n"^
+	    (fixStack args num) ^ (genCode body (envSize+1)) ^ "\n" ^
 	    "leave\n" ^
 	    "ret\n" ^ 
-	    lcontLabel ^ ":\n " ^ (incCounter lambdaOptCounter)
+	    lcontLabel ^ ":\n "
 
 
-	    and fixStack args = 
+	    and fixStack args num = 
 	    let fixedParamsCount = (List.length args) - 1 in
-	    let shiftStackAndPushNil = (makeNumberedLabel "shiftStackAndPushNil" !lambdaOptCounter) in
-	   	let optToListLoop = (makeNumberedLabel "optToListLoop" !lambdaOptCounter) in
-	    let shiftStack = (makeNumberedLabel "shiftStack" !lambdaOptCounter) in
-	    let shiftStack_nil = (makeNumberedLabel "shiftStackNil" !lambdaOptCounter) in
-	    let fixN = (makeNumberedLabel "fixN" !lambdaOptCounter) in 
+	    let shiftStackAndPushNil = (makeNumberedLabel "shiftStackAndPushNil" num) in
+	   	let optToListLoop = (makeNumberedLabel "optToListLoop" num) in
+	    let shiftStack = (makeNumberedLabel "shiftStack" num) in
+	    let shiftStack_nil = (makeNumberedLabel "shiftStackNil" num) in
+	    let fixN = (makeNumberedLabel "fixN" num) in 
 	    "
 	    ;rax = num of opt params
 	    mov rax, qword [rbp + 3*8]
@@ -540,18 +544,18 @@ let rec genCode exp deepCounter= match exp with
 
 	     and applicTPCodeGen proc argList deepCounter=
 	    let notAClosureLabel = (makeNumberedLabel "NotAClosureTP" !applicTPCounter) in
-	    let loopLabel = (makeNumberedLabel "Loop" !applicTPCounter) in
+	    let loopLabel = (makeNumberedLabel "LoopTP" !applicTPCounter) in
 	    let f argExpr acc = acc ^ ((genCode argExpr deepCounter)^"\n push rax\n") in 
 	    	(List.fold_right f argList "") ^ (*pushing the args last to first*)
 	    	"push " ^ (string_of_int (List.length argList)) ^ "\n" ^ (*num of args*)
 	    	(genCode proc deepCounter) ^ "\n" ^
 	    	"mov r13, rax ;save closure\n"^
 	    	"cmp byte [rax], T_CLOSURE\n" ^
-	    	"jne " ^ notAClosureLabel ^ "\n" ^
+	    	"jne " ^ notAClosureLabel ^ "\n\n" ^
 	    	"push qword [rax + TYPE_SIZE] ;push env\n" ^ 
 	    	"push qword [rbp + WORD_BYTES*1] ;old ret address\n" ^
 	    	"mov qword r10, [rbp] ; r10 = old old rbp\n"^
-	    	"mov r11, PARAM_COUNT ; save old param count \n"^
+	    	"mov r11, PARAM_COUNT ; save old param count \n\n"^
 
   			"push rax\n"^
   			"mov rax, PARAM_COUNT\n"^
@@ -565,12 +569,13 @@ let rec genCode exp deepCounter= match exp with
   			";mov rax, WORD_SIZE\n"^
   			"shl r12, 3\n"^
   			"sub r8, r12\n"^
+  			"shr r12, 3\n" ^
   			";pop rax\n"^
   			"mov r8, [r8]  \n"^
  	  		"mov [rbp+WORD_BYTES*rax], r8\n"^
   			"inc r12\n"^
   			"dec rcx\n"^
-  			"jne " ^ loopLabel ^ "\n\n"^
+  			"jnz " ^ loopLabel ^ "\n\n"^
   			"pop rax\n"^
 
   			";clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
