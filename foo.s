@@ -107,7 +107,8 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 1
+MAKE_LITERAL_INT 5
+MAKE_LITERAL_INT 0
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -119,6 +120,8 @@ MAKE_LITERAL_INT 1
 
 
 fvar_tbl:
+dq T_UNDEFINED
+dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -168,7 +171,7 @@ main:
     ;; from the top level (which SHOULD NOT HAPPEN
     ;; AND IS A BUG) will cause a segfault.
     push 0
-    push qword 7 ;;SOB_NIL_ADDRESS
+    push qword 7 ;SOB_NIL_ADDRESS
     push qword T_UNDEFINED
     push rsp
 
@@ -256,36 +259,29 @@ mov rbp, rsp
  ;;ret
  
  forDebug:
+;define(Var'(VarFree))
 ;applic
-;const
-mov rax    , const_tbl + 6
+;varFree
+mov rax, qword [fvar_tbl+256]
  push rax
-push 1
+;varFree
+mov rax, qword [fvar_tbl+232]
+ push rax
+;varFree
+mov rax, qword [fvar_tbl+224]
+ push rax
+;varFree
+mov rax, qword [fvar_tbl+32]
+ push rax
+push 4
 ;lambdaSimple
-MALLOC r9, 8 ;r9 = extEnv pointer
-mov qword rbx, [rbp + 8 * 2] ;lexical env pointer
-
-MALLOC rdx, 8 ;number of params
-mov qword [r9], rdx
-mov rcx, qword [rsp] ; rcx = fixedParamsCount, rsp = num of args???
-	    	mov r12, 0 ; r12 = i 
-	       copyParamsLoop0:
-	    		mov qword rdx, [r9]
-	    		mov r13, r12
-	    		add r13, 4
-	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
-	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
-	    		inc r12
-	    		dec rcx
-	    		jne copyParamsLoop0
-MAKE_CLOSURE (rax, r9, Lcode0)
-;mov rax, [rax]
+MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
 jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-;varParam
- mov rax, qword [rbp + 8*(4 + 0)]
+;const
+mov rax    , const_tbl + 6
 leave
 ret
 Lcont0:
@@ -311,91 +307,139 @@ NotAClosure0:
 	syscall
 FinishedApplic0:
 
+mov qword [fvar_tbl+264], rax
+mov rax, SOB_VOID_ADDRESS
+    call write_sob_if_not_void
+
+
+;define(Var'(VarFree))
+;applic
+;varFree
+mov rax, qword [fvar_tbl+216]
+ push rax
+push 1
+;lambdaSimple
+MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode1)
+jmp Lcont1
+Lcode1:
+ push rbp
+mov rbp, rsp
+;lambdaSimple
+MALLOC r9, 16 ;r9 = extEnv pointer
+MAKE_CLOSURE (rax, r9, Lcode2)
+mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer
+;copyEnvLoop - r9[i+1] = rbx[i]:
+mov qword r8, [rbx + 0] ;go to lexical env , tmp val is in r8
+mov qword [r9 + 8], r8
+
+mov r13, qword [rbp+8*3] 
+MALLOC rdx, r13 ;number of params of prev env * 8
+mov rcx, qword [rbp+3*8] ; rcx = param count
+	    	mov r12, 0 ; r12 = i 
+	       copyParamsLoop1:
+	    		mov r13, r12
+	    		add r13, 4
+	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
+	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
+	    		inc r12
+	    		dec rcx
+	    		jne copyParamsLoop1
+mov qword [r9], rdx
+ ;rdx is the params vector
+jmp Lcont2
+Lcode2:
+ push rbp
+mov rbp, rsp
+;applicTP
+;const
+mov rax    , const_tbl + 15
+ push rax
+;varParam
+ mov rax, qword [rbp + 8*(4 + 0)]
+ push rax
+push 2
+;varBound
+ mov rax, qword[rbp + 8*2]
+mov rax, qword [rax + 8 * 0]
+mov rax, qword [rax + 8 * 0]
+mov r13, rax ;save closure
+cmp byte [rax], T_CLOSURE
+jne NotAClosureTP0
+push qword [rax + TYPE_SIZE] ;push env
+push qword [rbp + WORD_BYTES*1] ;old ret address
+mov qword r10, [rbp] ; r10 = old old rbp
+mov r11, PARAM_COUNT ; save old param count 
+push rax
+mov rax, PARAM_COUNT
+add rax, 4
+mov rcx, 5 ;;check! maybe add 4 instead
+mov r12, 1
+Loop0:
+dec rax
+mov r8, rbp
+push rax
+mov rax, WORD_SIZE
+mul r12
+sub r8, rax
+pop rax
+mov r8, [r8]  
+mov [rbp+WORD_BYTES*rax], r8
+inc r12
+dec rcx
+jne Loop0
+
+pop rax
+;clean stack: add rsp , WORD_BYTES*(r11+4)
+;push rax
+;mov rax, WORD_SIZE
+add r11, 4
+shl r11,3
+add rsp, r11
+;pop rax
+
+;pop rax
+mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
+jmp [r13 + TYPE_SIZE + WORD_BYTES]
+NotAClosureTP0:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+
+leave
+ret
+Lcont2:
+ 
+leave
+ret
+Lcont1:
+ 
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure1
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic1
+
+NotAClosure1:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic1:
+
+mov qword [fvar_tbl+272], rax
+mov rax, SOB_VOID_ADDRESS
     call write_sob_if_not_void
 leave
  ret
-apply:
-        push rbp
-        mov rbp, rsp
-        push SOB_NIL_ADDRESS ;; push magicarg
-        xor r8, r8 ;; we will use to count number of args in list
-        mov r9 , PARAM_COUNT
-        dec r9
-        mov rsi, PVAR(r9) ;; last argument is list -> rsi
-        .get_list_params:
-         mov dl, byte [rsi]
-         cmp dl, T_NIL
-         je .pre_rearange_args
-         cmp dl, T_PAIR
-         je .push_arg
-         jmp .wrong_type
-.push_arg:
-    CAR r10, rsi
-    CDR rsi, rsi
-    push r10
-    inc r8
-    jmp .get_list_params
-
-.pre_rearange_args:
-    xor r10 , r10 ;; we will use a counter
-    mov r11 , r8 
-    dec r11
-
-.rearange_args:
-    cmp r10, r11
-    jge .pre_push_rest_args 
-    mov r14, [rsp + 8 * r10]
-    mov r15, [rsp + 8 * r11]
-    mov [rsp + 8 * r10], r15
-    mov [rsp + 8 * r11], r14
-    inc r10
-    dec r11
-    jmp .rearange_args
-.pre_push_rest_args:
-    mov r9 , PARAM_COUNT
-    sub r9, 2
-.push_rest_args:
-    cmp r9, 0 
-    jle .end_stack
-    mov rsi, PVAR(r9)
-    push rsi
-    dec r9
-    jmp .push_rest_args
-.end_stack:
-    mov r9 , PARAM_COUNT
-    sub r9, 2 ;; remember proc is also an argument
-    add r9, r8
-    push r9 ;; push arg count
-    mov rsi ,PVAR(0)
-    cmp byte [rsi], T_CLOSURE
-    jne .wrong_type
-    CLOSURE_ENV rdi,rsi
-    push rdi ;; push closure env
-    push qword [rbp + 8] ;; push ret adress
-    mov r15, qword [rbp] ;;save old rbp
-    
- .shift_frame:
-    add r9 , 5
-    SHIFT_FRAME_2 r9
-    
-  
-  .end:  
-  mov rbp,r15
-  jmp qword [rsi+9]
-  add rsp , 8*1 ; pop env
-  pop rbx ; pop arg count
-  inc rbx ; for remove magic
-  shl rbx , 3 ; rbx = rbx * 8
-  add rsp , rbx ;  pop args
-  jmp .return 
-.wrong_type:
-    mov     rax, 60               ; system call 60 is exit
-    xor     rdi,rdi           ;return code 0
-    syscall 
-.return:
-    leave
-    ret  
-
 
 is_boolean:
     push rbp

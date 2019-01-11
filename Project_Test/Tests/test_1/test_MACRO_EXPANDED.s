@@ -1194,21 +1194,29 @@ mov rbp, rsp
  sub r9, [rsp]
  add rsp, 8
 %line 274+1 ./Project_Test/Tests/test_1/test.s
+ add qword [malloc_pointer], 1+8*2
+%line 274+0 ./Project_Test/Tests/test_1/test.s
+ push 1+8*2
+ mov rax, qword [malloc_pointer]
+ sub rax, [rsp]
+ add rsp, 8
+ mov byte [rax], 9
+ mov qword [rax+1], r9
+ mov qword [rax+1+8], Lcode1
+%line 275+1 ./Project_Test/Tests/test_1/test.s
 mov qword rbx, [rbp + 8 * 2]
 
-mov qword rdx, [rbx + 0]
-mov qword [r9 + 8], rdx
+mov qword r8, [rbx + 0]
+mov qword [r9 + 8], r8
 
 mov r13, qword [rbp+8*3]
  add qword [malloc_pointer], r13
-%line 280+0 ./Project_Test/Tests/test_1/test.s
+%line 281+0 ./Project_Test/Tests/test_1/test.s
  push r13
  mov rdx, qword [malloc_pointer]
  sub rdx, [rsp]
  add rsp, 8
-%line 281+1 ./Project_Test/Tests/test_1/test.s
-mov qword [r9], rdx
-
+%line 282+1 ./Project_Test/Tests/test_1/test.s
 mov rcx, qword [rbp+3*8]
  mov r12, 0
  copyParamsLoop0:
@@ -1219,16 +1227,8 @@ mov rcx, qword [rbp+3*8]
  inc r12
  dec rcx
  jne copyParamsLoop0
- add qword [malloc_pointer], 1+8*2
-%line 293+0 ./Project_Test/Tests/test_1/test.s
- push 1+8*2
- mov rax, qword [malloc_pointer]
- sub rax, [rsp]
- add rsp, 8
- mov byte [rax], 9
- mov qword [rax+1], r9
- mov qword [rax+1+8], Lcode1
-%line 294+1 ./Project_Test/Tests/test_1/test.s
+mov qword [r9], rdx
+
 jmp Lcont1
 Lcode1:
  push rbp

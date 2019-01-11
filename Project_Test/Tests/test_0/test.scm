@@ -1,3 +1,5 @@
    
-            ((lambda(x) x) 85)
+                (define proc (lambda (x) 
+                                (lambda () x)))   
+            ((proc 1))
     

@@ -369,13 +369,14 @@ let rec genCode exp deepCounter= match exp with
 	    let envHandling =  
 	    	if (envSize == 0) then "MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, "^lcodeLabel^")\n"
 	    	else "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
+	    		 "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n" ^
 	    		 "mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer\n" ^
 	    		 (copyEnvLoop 0 envSize "") ^ "\n" ^ 
 	    		 "mov r13, qword [rbp+8*3] \n"^
 	    		 "MALLOC rdx, r13 ;number of params of prev env * 8\n" ^ 
-	    		 "mov qword [r9], rdx\n ;rdx is the params vector\n" ^
 	    		 (copyParams) ^ "\n" ^
-	    		 "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n" in
+	    		 "mov qword [r9], rdx\n ;rdx is the params vector\n"
+	    			in
 	    envHandling ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
 	    lcodeLabel ^ ":\n "^
@@ -425,8 +426,8 @@ let rec genCode exp deepCounter= match exp with
 	    and copyEnvLoop i envSize str = 
 	    if i < envSize then 
 	    	";copyEnvLoop - r9[i+1] = rbx[i]:\n" ^ (copyEnvLoop (i+1) envSize (
-	    	"mov qword rdx, [rbx + "^ (string_of_int (i*8)) ^ "] ;go to lexical env , tmp val is in rdx\n" ^ 
- 			"mov qword [r9 + "^ (string_of_int ((i+1)*8)) ^"], rdx\n" ^ str)) 
+	    	"mov qword r8, [rbx + "^ (string_of_int (i*8)) ^ "] ;go to lexical env , tmp val is in r8\n" ^ 
+ 			"mov qword [r9 + "^ (string_of_int ((i+1)*8)) ^"], r8\n" ^ str)) 
 
 	    else
 	    	str

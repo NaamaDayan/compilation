@@ -107,7 +107,7 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 85
+MAKE_LITERAL_INT 1
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -119,6 +119,7 @@ MAKE_LITERAL_INT 85
 
 
 fvar_tbl:
+dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -256,23 +257,86 @@ mov rbp, rsp
  ;;ret
  
  forDebug:
-;applic
-;const
-mov rax    , const_tbl + 6
- push rax
-push 1
+;define(Var'(VarFree))
 ;lambdaSimple
 MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
 jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-;varParam
- mov rax, qword [rbp + 8*(4 + 0)]
+;lambdaSimple
+MALLOC r9, 16 ;r9 = extEnv pointer
+MAKE_CLOSURE (rax, r9, Lcode1)
+mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer
+;copyEnvLoop - r9[i+1] = rbx[i]:
+mov qword r8, [rbx + 0] ;go to lexical env , tmp val is in r8
+mov qword [r9 + 8], r8
+
+mov r13, qword [rbp+8*3] 
+MALLOC rdx, r13 ;number of params of prev env * 8
+mov rcx, qword [rbp+3*8] ; rcx = param count
+	    	mov r12, 0 ; r12 = i 
+	       copyParamsLoop0:
+	    		mov r13, r12
+	    		add r13, 4
+	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
+	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
+	    		inc r12
+	    		dec rcx
+	    		jne copyParamsLoop0
+mov qword [r9], rdx
+ ;rdx is the params vector
+jmp Lcont1
+Lcode1:
+ push rbp
+mov rbp, rsp
+;varBound
+ mov rax, qword[rbp + 8*2]
+mov rax, qword [rax + 8 * 0]
+mov rax, qword [rax + 8 * 0]
+leave
+ret
+Lcont1:
+ 
 leave
 ret
 Lcont0:
  
+mov qword [fvar_tbl+264], rax
+mov rax, SOB_VOID_ADDRESS
+    call write_sob_if_not_void
+
+
+;applic
+push 0
+;applic
+;const
+mov rax    , const_tbl + 6
+ push rax
+push 1
+;varFree
+mov rax, qword [fvar_tbl+264]
+;check if closure 
+cmp byte [rax], T_CLOSURE
+jne NotAClosure1
+
+push qword [rax+TYPE_SIZE]  ;push env:
+call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
+
+;cleaning the stack 
+add rsp, 8*1 ; pop env
+pop rbx ; pop arg count
+shl rbx, 3 ; rbx = rbx * 8
+add rsp, rbx; pop args
+jmp FinishedApplic1
+
+NotAClosure1:
+	mov rdi, notACLosureError
+	call print_string
+	mov rax, 1
+	syscall
+FinishedApplic1:
+
 ;check if closure 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0

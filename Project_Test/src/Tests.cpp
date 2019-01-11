@@ -104,14 +104,12 @@ void InitializingTests()
             (let ((z 1))
             y))     
     )V0G0N"*/
-    /*R"V0G0N(   
+    R"V0G0N(   
                 (define proc (lambda (x) 
                                 (lambda () x)))   
             ((proc 1))
-    )V0G0N"*/
-    R"V0G0N(   
-            ((lambda(x) x) 85)
     )V0G0N";
+   
     string test_28 = /*R"V0G0N(   
                 ((lambda (x) 6) 6)
                 ((lambda (y) 5) 5)

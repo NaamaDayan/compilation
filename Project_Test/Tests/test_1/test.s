@@ -271,15 +271,14 @@ Lcode0:
 mov rbp, rsp
 ;lambdaSimple
 MALLOC r9, 16 ;r9 = extEnv pointer
+MAKE_CLOSURE (rax, r9, Lcode1)
 mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer
 ;copyEnvLoop - r9[i+1] = rbx[i]:
-mov qword rdx, [rbx + 0] ;go to lexical env , tmp val is in rdx
-mov qword [r9 + 8], rdx
+mov qword r8, [rbx + 0] ;go to lexical env , tmp val is in r8
+mov qword [r9 + 8], r8
 
 mov r13, qword [rbp+8*3] 
 MALLOC rdx, r13 ;number of params of prev env * 8
-mov qword [r9], rdx
- ;rdx is the params vector
 mov rcx, qword [rbp+3*8] ; rcx = param count
 	    	mov r12, 0 ; r12 = i 
 	       copyParamsLoop0:
@@ -290,7 +289,8 @@ mov rcx, qword [rbp+3*8] ; rcx = param count
 	    		inc r12
 	    		dec rcx
 	    		jne copyParamsLoop0
-MAKE_CLOSURE (rax, r9, Lcode1)
+mov qword [r9], rdx
+ ;rdx is the params vector
 jmp Lcont1
 Lcode1:
  push rbp
