@@ -1,3 +1,3 @@
    
-                (procedure? (lambda s (car s)))             ; #t
+                (make-string 5 #\r)
     

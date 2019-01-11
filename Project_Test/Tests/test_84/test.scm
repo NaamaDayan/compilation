@@ -1,3 +1,3 @@
    
-                (string-length "")                          ; 0
+                (not #t)                                    ; #f
     

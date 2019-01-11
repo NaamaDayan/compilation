@@ -1,3 +1,3 @@
    
-                (zero? 0)                                   ; #t
+                (string-length "")                          ; 0
     

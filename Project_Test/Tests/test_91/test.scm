@@ -1,3 +1,3 @@
    
-                (symbol? 'symbol)                           ; #t
+                (number? "hello, world!")
     

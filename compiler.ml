@@ -85,51 +85,8 @@ db %1
 %endrep
 %endmacro
 
-%define TYPE(r) byte [r]
-%define DATA(r) [r+TYPE_SIZE]
-
-%define INT_DATA(r) qword DATA(r)
-%define FLOAT_DATA(r) qword DATA(r)
-%define CHAR_DATA(r) byte DATA(r)
-%define BOOL_DATA(r) byte DATA(r)
-
-%define STR_LEN(r) qword DATA(r)
-%define STR_DATA_PTR(r) r + WORD_BYTES+ TYPE_SIZE
-%define STRING_REF(r,i) byte [r+WORD_BYTES+ TYPE_SIZE + i]
-
-%define LOWER_DATA(sob) qword [sob+ TYPE_SIZE]
-%define UPPER_DATA(sob) qword [sob+WORD_BYTES +TYPE_SIZE]
-%define CAR LOWER_DATA
-%define CDR UPPER_DATA
-%define ENV LOWER_DATA
-%define BODY UPPER_DATA
-%define VECTOR_LEN LOWER_DATA
-%define VECTOR_REF(r,i) qword [r+TYPE_SIZE+WORD_BYTES+i*WORD_BYTES]
 
 %define PARAM_COUNT qword [rbp+3*WORD_SIZE]
-
-%macro SHIFT_FRAME 1
-  push rax
-  mov rax, PARAM_COUNT
-  add rax, 4
-%assign i 1
-%rep %1
-  dec rax
-  mov r8, rbp
-  sub qword r8, WORD_BYTES*i
-  mov r8, [r8]  
-  mov [rbp+WORD_BYTES*rax], r8
-% assign i i+1
-%endrep
-  pop rax
-%endmacro
-
-;%1 = param count in old frame
-%macro CLEAN_STACK 1
-  add rsp, WORD_BYTES * (4+%1)
-%endmacro
-
-;;end self written macros!!!
 
 
 notACLosureError: ;;there was a dot before this line!
@@ -189,7 +146,7 @@ mov rbp, rsp
  forDebug:
 ";;
 
-let epilogue = (*TODO: implement apply*)
+let epilogue =
 "car:
     push rbp
     mov rbp, rsp
@@ -211,32 +168,32 @@ cdr:
     ret
     
 set_car:
- ;   push rbp
- ;   mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;CAR rsi, rsi
-    ;mov rdi, PVAR(1) ;new car
+    mov rsi, PVAR(0) 
+    CAR rsi, rsi
+    mov rdi, PVAR(1) ;new car
 
-    ;mov [rsi], rdi
-    ;mov rax, SOB_VOID_ADDRESS
+    mov [rsi], rdi
+    mov rax, SOB_VOID_ADDRESS
 
-    ;leave
-    ;ret
+    leave
+    ret
     
 set_cdr:
-    ;push rbp
-    ;mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;CDR rsi, rsi
-    ;mov rdi, PVAR(1) ;new cdr
+    mov rsi, PVAR(0) 
+    CDR rsi, rsi
+    mov rdi, PVAR(1) ;new cdr
 
-    ;mov [rsi], rdi
-    ;mov rax, SOB_VOID_ADDRESS
+    mov [rsi], rdi
+    mov rax, SOB_VOID_ADDRESS
 
-    ;leave
-    ;ret
+    leave
+    ret
     
 cons:
     push rbp

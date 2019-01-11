@@ -1,3 +1,1 @@
-   
-             'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol    
-    
+'#(55 4.4 "gotcha" #t #f #\tab "\n \r \f this is \n \r gfgfdgf 4543543 ff \f ")

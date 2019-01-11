@@ -1,3 +1,3 @@
    
-                (define x '(1 2)) (define y '(3 4)) (define z (append x y)) (set-car! x '*) (set-car! y '$) z                                           ; (1 . (2 . ($ . (4 . ()))))
+                ((lambda (y z) ((lambda ( x w)  (set! y 5) y) 3 4))1 2)
     

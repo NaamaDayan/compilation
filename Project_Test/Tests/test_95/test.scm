@@ -1,3 +1,3 @@
    
-                (vector 'vector 'vector)                      ; #(vector vector)
+                (procedure? procedure?)                     ; #t
     

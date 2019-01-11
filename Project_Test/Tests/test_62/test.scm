@@ -1,3 +1,7 @@
    
-                (map list '("a" "b" "c") '('a 'b 'c) '(1 2 3) '(0.5 0.333 0.25))
+             (let ((x #f) (y #t))
+            (let ((x #f))
+              (let ((x #f) (z #f) (t #f))
+                (let ((x #f) (t #f))
+            y))))   
     

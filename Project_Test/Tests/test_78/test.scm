@@ -1,3 +1,3 @@
    
-                (set-car! '(a b c) '(x y z))
+                (make-vector 2 "scheme")
     

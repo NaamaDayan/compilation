@@ -1,3 +1,3 @@
    
-                (string-length "a")
+                (null? '())                                 ; #t
     

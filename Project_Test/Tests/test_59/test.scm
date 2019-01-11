@@ -1,3 +1,3 @@
    
-                (map (lambda (s) "batman") '("why" "so" "serious?"))
+                 ((lambda s 1) 2 3 4)
     

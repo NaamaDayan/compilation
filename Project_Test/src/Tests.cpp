@@ -66,7 +66,13 @@ void InitializingTests()
     testsFunctions.push_back(FINAL_PROJECT_TEST);
 
      // Defining tests
-    string test_1 = "";
+    string test_1 = R"V0G0N(   
+             (let ((x #f) (y #t))
+            (let ((x #f))
+              (let ((x #f) (z #f) (t #f))
+                (let ((x #f) (t #f))
+            y))))   
+    )V0G0N";
     string test_2 = "(define pro (lambda (x) x))"; //was 5.5
     string test_3 = "#t #f";
     string test_4 = "'()";
@@ -86,9 +92,9 @@ void InitializingTests()
     string test_16 = "(or #f #f #f #f #f #f 5)";
     string test_17 = "(define pro (lambda (x) x))";
     string test_18 = "(define pro (lambda (x) x)) (pro 5)";
-    string test_19 = /*"(define pro (lambda (x . y) x)) (pro 5)"*/"";
-    string test_20 = /*"(define pro (lambda (x . y) y)) (pro 5 4 3 2 1)*/"";
-    string test_21 = /*"(define pro (lambda y y)) (pro 5 4 3 2 1)"*/""; //this fails because this is an optional lamnda!!!!!
+    string test_19 = "(define pro (lambda (x . y) x)) (pro 5)";
+    string test_20 = "(define pro (lambda (x . y) y)) (pro 5 4 3 2 1)";
+    string test_21 = "(define pro (lambda y y)) (pro 5 4 3 2 1)"; //this fails because this is an optional lamnda!!!!!
     string test_22 = "(define pro 10) pro" 
                      "(define tail 5) tail";
     string test_23 = "(define pro 10) pro pro pro pro pro pro pro";
@@ -96,9 +102,9 @@ void InitializingTests()
                      "(define tail 5) pro tail pro";
     string test_25 = "(define pro 10) pro pro pro" 
                      "(define tail 5) tail pro";
-    string test_26 = /*"(define pro (lambda (f x) (f x)))" 
+    string test_26 = "(define pro (lambda (f x) (f x)))" 
                      "(define tail (lambda x x))"
-                     "(pro tail 5)*/""; //lambda opt!!!!!
+                     "(pro tail 5)"; //lambda opt!!!!!
     string test_27 = /*R"V0G0N(   
              (let ((x #f) (y #t))
             (let ((z 1))
@@ -110,14 +116,14 @@ void InitializingTests()
             ((proc 1))
     )V0G0N";
    
-    string test_28 = /*R"V0G0N(   
+    string test_28 = R"V0G0N(   
                 ((lambda (x) 6) 6)
                 ((lambda (y) 5) 5)
-    )V0G0N"*/
-    R"V0G0N(   
+    )V0G0N"
+    /*R"V0G0N(   
             (((lambda (x) 
                 (lambda () x)) 85))
-    )V0G0N";
+    )V0G0N"*/;
     string test_29 = R"V0G0N(   
                 (define append 
                   (let ((null? null?) (car car) (cdr cdr) (cons cons)) 5))
@@ -1439,15 +1445,15 @@ void InitializingTests()
     string test_56 = R"V0G0N(   
                  (define foo (lambda (x) x))
     )V0G0N";
-    string test_57 = /*R"V0G0N(   
+    string test_57 = R"V0G0N(   
                  ((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack, and then wrapped in a list: (Nil, Nil)
-    )V0G0N"*/"";
-    string test_58 = /*R"V0G0N(   
+    )V0G0N";
+    string test_58 = R"V0G0N(   
                  ((lambda (a . d) d) 1 2 3 4 6 7 8 9 10)      ; packing the optional arguments to a list - should return (4 . (6 . (7 . (8 . ()))))
-    )V0G0N"*/"";
-    string test_59 = /*R"V0G0N(   
+    )V0G0N";
+    string test_59 = R"V0G0N(   
                  ((lambda s 1) 2 3 4)
-    )V0G0N"*/"";
+    )V0G0N";
     string test_60 = R"V0G0N(   
                  ((lambda (x) (set! x 5)) 1)               ; set! expressions return void - should print a newline in the prompt
     )V0G0N";
@@ -1462,17 +1468,12 @@ void InitializingTests()
               (lambda (z) (z #t #f)))
             (lambda (x y) x))
     )V0G0N";
-    string test_62 = /*R"V0G0N(   
+    string test_62 = R"V0G0N(   
              (let ((x #f) (y #t))
             (let ((x #f))
               (let ((x #f) (z #f) (t #f))
                 (let ((x #f) (t #f))
             y))))   
-    )V0G0N*/
-    R"V0G0N(   
-             (let ((x #f) (y #t))
-            (let ((z 1))
-            y))     
     )V0G0N";
     string test_63 = R"V0G0N(   
               (((((lambda (x) ((x x) (x x)))
@@ -5585,7 +5586,7 @@ void InitializingTests()
     )V0G0N";
 
     // Adding Tests
-    /*testsCodes.push_back(test_0);
+    testsCodes.push_back(test_0);
     testsCodes.push_back(test_1);
     testsCodes.push_back(test_2);
     testsCodes.push_back(test_3);
@@ -5611,7 +5612,7 @@ void InitializingTests()
     testsCodes.push_back(test_23);
     testsCodes.push_back(test_24);
     testsCodes.push_back(test_25);
-    testsCodes.push_back(test_26);*/
+    testsCodes.push_back(test_26);
     testsCodes.push_back(test_27);
     testsCodes.push_back(test_28);
     testsCodes.push_back(test_29);
@@ -5650,7 +5651,7 @@ void InitializingTests()
     testsCodes.push_back(test_62);
     testsCodes.push_back(test_63);
     testsCodes.push_back(test_64);
-    testsCodes.push_back(test_65);
+    /*testsCodes.push_back(test_65);
     testsCodes.push_back(test_66);
     testsCodes.push_back(test_67);
     testsCodes.push_back(test_68);

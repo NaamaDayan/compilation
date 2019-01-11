@@ -1,3 +1,3 @@
    
-                (vector-length '#())                        ; 0
+                (set-car! '(a b c) '(x y z))
     

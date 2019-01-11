@@ -54,7 +54,9 @@
 
 %define VECTOR_ELEMENTS STRING_ELEMENTS
 
-%define CAR SKIP_TYPE_TAG
+%macro CAR 2
+    SKIP_TYPE_TAG %1, %2
+%endmacro
 
 %macro CDR 2
 	mov %1, qword [%2+TYPE_SIZE+WORD_SIZE]

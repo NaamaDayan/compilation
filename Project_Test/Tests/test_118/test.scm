@@ -1,0 +1,3 @@
+   
+                (vector-length '#())                        ; 0
+    

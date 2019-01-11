@@ -1,3 +1,1 @@
-   
-                 (begin 1 2 3)                             ; sequence
-    
+(define pro (lambda (x) x))

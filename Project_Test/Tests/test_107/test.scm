@@ -1,4 +1,3 @@
- 
-        (equal? "  \n \t \r \f  " "  \n \t \r \f  ")
-    
+   
+               (string-set! "string" 1 #\p) 
     

@@ -1,3 +1,1 @@
-   
-                 (or)                                      ; or without sub-expressions
-    
+(define pro (lambda (x) x)) (pro 5)

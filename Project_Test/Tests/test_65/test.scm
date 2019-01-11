@@ -1,3 +1,3 @@
    
-                (null? '())                                 ; #t
+                (eq? '#(vector) '#(list))
     

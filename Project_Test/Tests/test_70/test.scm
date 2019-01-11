@@ -1,3 +1,3 @@
    
-                (number? #t)                                ; #f
+                (integer->char 60)
     

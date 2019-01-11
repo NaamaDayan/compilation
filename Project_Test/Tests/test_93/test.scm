@@ -1,3 +1,3 @@
    
-                (symbol? 2)
+                (pair? '())                                 ; excpetion - wrong number of arguments
     

@@ -1,3 +1,3 @@
    
-                (make-string 5 #\r)
+                 (define foo (lambda (x) x))
     

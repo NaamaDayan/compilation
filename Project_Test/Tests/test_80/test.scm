@@ -1,3 +1,3 @@
    
-                (define l '(1 2 3)) (set-car! l '(4 5)) l (car l) (cdr l)
+                (map (lambda (x) x) '(-1 -2 -0.6))          ; (-1 . (-2 . (-3/5 . ())))
     

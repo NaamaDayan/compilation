@@ -1,3 +1,4 @@
-make[1]: Entering directory '/home/naama/compiler'
-cd /home/naama/compiler/ && ocaml compiler.ml /home/naama/compiler/Project_Test/Tests/test_1/test.scm > Project_Test/Tests/test_1/test.s && nasm -g -f elf64 -o Project_Test/Tests/test_1/test.o Project_Test/Tests/test_1/test.s && gcc -static -m64 -o Project_Test/Tests/test_1/test Project_Test/Tests/test_1/test.o && mv Project_Test/Tests/test_1/test /home/naama/compiler
-make[1]: Leaving directory '/home/naama/compiler'
+make[1]: Entering directory '/home/shahar/compiler'
+cd /home/shahar/compiler/ && ocaml compiler.ml /home/shahar/compiler/Project_Test/Tests/test_1/test.scm > Project_Test/Tests/test_1/test.s && nasm -g -f elf64 -o Project_Test/Tests/test_1/test.o Project_Test/Tests/test_1/test.s && gcc -static -m64 -o Project_Test/Tests/test_1/test Project_Test/Tests/test_1/test.o && mv Project_Test/Tests/test_1/test /home/shahar/compiler
+Makefile:7: recipe for target 'Project_Test/Tests/test_1/test' failed
+make[1]: *** [Project_Test/Tests/test_1/test] Interrupt

@@ -1,3 +1,1 @@
-   
-                 (or #f #f 'a)                             ; or with sub-expressions
-    
+(define pro (lambda (x . y) x)) (pro 5)

@@ -1,3 +1,3 @@
    
-                (string-ref "string" 1)
+                (null? '(9 #\F))                            ; #f
     

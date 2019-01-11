@@ -1,3 +1,3 @@
    
-                (append '(1) 2)
+                 (begin 1 2 3)                             ; sequence
     

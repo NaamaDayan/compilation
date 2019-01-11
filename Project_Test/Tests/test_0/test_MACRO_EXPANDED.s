@@ -31,68 +31,68 @@
 
 
 
+%line 60+1 compiler.s
 
-
-%line 62+1 compiler.s
-
-
-
+%line 64+1 compiler.s
 
 
 
 
-%line 74+1 compiler.s
 
 
 
-%line 84+1 compiler.s
+%line 76+1 compiler.s
 
 
 
-
-%line 93+1 compiler.s
-
-
-
-
-%line 102+1 compiler.s
-
-%line 106+1 compiler.s
+%line 86+1 compiler.s
 
 
 
 
-%line 128+1 compiler.s
+%line 95+1 compiler.s
 
 
 
 
-%line 150+1 compiler.s
+%line 104+1 compiler.s
+
+%line 108+1 compiler.s
 
 
 
 
-%line 160+1 compiler.s
+%line 130+1 compiler.s
 
-%line 166+1 compiler.s
 
-%line 169+1 compiler.s
 
-%line 172+1 compiler.s
 
-%line 175+1 compiler.s
+%line 152+1 compiler.s
+
+
+
+
+%line 162+1 compiler.s
+
+%line 168+1 compiler.s
+
+%line 171+1 compiler.s
+
+%line 174+1 compiler.s
+
+%line 177+1 compiler.s
 
 
 [extern exit]
-%line 177+0 compiler.s
+%line 179+0 compiler.s
 [extern printf]
 [extern malloc]
-%line 178+1 compiler.s
+%line 180+1 compiler.s
 [global write_sob]
-%line 178+0 compiler.s
+%line 180+0 compiler.s
 [global write_sob_if_not_void]
 [global print_string]
-%line 179+1 compiler.s
+%line 181+1 compiler.s
 
 
 
@@ -687,20 +687,6 @@ malloc_pointer:
 
 %line 55+1 ./Project_Test/Tests/test_0/test.s
 
-%line 58+1 ./Project_Test/Tests/test_0/test.s
-
-%line 63+1 ./Project_Test/Tests/test_0/test.s
-
-%line 67+1 ./Project_Test/Tests/test_0/test.s
-
-%line 76+1 ./Project_Test/Tests/test_0/test.s
-
-
-
-%line 94+1 ./Project_Test/Tests/test_0/test.s
-
-
-%line 99+1 ./Project_Test/Tests/test_0/test.s
 
 
 
@@ -711,26 +697,21 @@ const_tbl:
 db 1
 db 2
 db 5
-%line 108+0 ./Project_Test/Tests/test_0/test.s
+%line 65+0 ./Project_Test/Tests/test_0/test.s
 db 0
-%line 109+1 ./Project_Test/Tests/test_0/test.s
+%line 66+1 ./Project_Test/Tests/test_0/test.s
 db 5
-%line 109+0 ./Project_Test/Tests/test_0/test.s
+%line 66+0 ./Project_Test/Tests/test_0/test.s
 db 1
-%line 110+1 ./Project_Test/Tests/test_0/test.s
-db 3
-%line 110+0 ./Project_Test/Tests/test_0/test.s
-dq 1
-%line 111+1 ./Project_Test/Tests/test_0/test.s
+%line 67+1 ./Project_Test/Tests/test_0/test.s
 
 
 
-%line 118+1 ./Project_Test/Tests/test_0/test.s
+%line 74+1 ./Project_Test/Tests/test_0/test.s
 
 
 
 fvar_tbl:
-dq 0
 dq 0
 dq 0
 dq 0
@@ -798,7 +779,7 @@ mov rbp, rsp
 
 
  add qword [malloc_pointer], 1+8*2
-%line 189+0 ./Project_Test/Tests/test_0/test.s
+%line 144+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -806,10 +787,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_boolean
-%line 190+1 ./Project_Test/Tests/test_0/test.s
+%line 145+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 0], rax
  add qword [malloc_pointer], 1+8*2
-%line 191+0 ./Project_Test/Tests/test_0/test.s
+%line 146+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -817,10 +798,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_float
-%line 192+1 ./Project_Test/Tests/test_0/test.s
+%line 147+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 8], rax
  add qword [malloc_pointer], 1+8*2
-%line 193+0 ./Project_Test/Tests/test_0/test.s
+%line 148+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -828,10 +809,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_integer
-%line 194+1 ./Project_Test/Tests/test_0/test.s
+%line 149+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 16], rax
  add qword [malloc_pointer], 1+8*2
-%line 195+0 ./Project_Test/Tests/test_0/test.s
+%line 150+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -839,10 +820,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_pair
-%line 196+1 ./Project_Test/Tests/test_0/test.s
+%line 151+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 24], rax
  add qword [malloc_pointer], 1+8*2
-%line 197+0 ./Project_Test/Tests/test_0/test.s
+%line 152+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -850,10 +831,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_null
-%line 198+1 ./Project_Test/Tests/test_0/test.s
+%line 153+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 32], rax
  add qword [malloc_pointer], 1+8*2
-%line 199+0 ./Project_Test/Tests/test_0/test.s
+%line 154+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -861,10 +842,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_char
-%line 200+1 ./Project_Test/Tests/test_0/test.s
+%line 155+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 40], rax
  add qword [malloc_pointer], 1+8*2
-%line 201+0 ./Project_Test/Tests/test_0/test.s
+%line 156+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -872,10 +853,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_vector
-%line 202+1 ./Project_Test/Tests/test_0/test.s
+%line 157+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 48], rax
  add qword [malloc_pointer], 1+8*2
-%line 203+0 ./Project_Test/Tests/test_0/test.s
+%line 158+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -883,10 +864,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_string
-%line 204+1 ./Project_Test/Tests/test_0/test.s
+%line 159+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 56], rax
  add qword [malloc_pointer], 1+8*2
-%line 205+0 ./Project_Test/Tests/test_0/test.s
+%line 160+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -894,10 +875,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_procedure
-%line 206+1 ./Project_Test/Tests/test_0/test.s
+%line 161+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 64], rax
  add qword [malloc_pointer], 1+8*2
-%line 207+0 ./Project_Test/Tests/test_0/test.s
+%line 162+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -905,10 +886,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_symbol
-%line 208+1 ./Project_Test/Tests/test_0/test.s
+%line 163+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 72], rax
  add qword [malloc_pointer], 1+8*2
-%line 209+0 ./Project_Test/Tests/test_0/test.s
+%line 164+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -916,10 +897,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], string_length
-%line 210+1 ./Project_Test/Tests/test_0/test.s
+%line 165+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 80], rax
  add qword [malloc_pointer], 1+8*2
-%line 211+0 ./Project_Test/Tests/test_0/test.s
+%line 166+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -927,10 +908,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], string_ref
-%line 212+1 ./Project_Test/Tests/test_0/test.s
+%line 167+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 88], rax
  add qword [malloc_pointer], 1+8*2
-%line 213+0 ./Project_Test/Tests/test_0/test.s
+%line 168+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -938,10 +919,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], string_set
-%line 214+1 ./Project_Test/Tests/test_0/test.s
+%line 169+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 96], rax
  add qword [malloc_pointer], 1+8*2
-%line 215+0 ./Project_Test/Tests/test_0/test.s
+%line 170+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -949,10 +930,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], make_string
-%line 216+1 ./Project_Test/Tests/test_0/test.s
+%line 171+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 104], rax
  add qword [malloc_pointer], 1+8*2
-%line 217+0 ./Project_Test/Tests/test_0/test.s
+%line 172+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -960,10 +941,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], vector_length
-%line 218+1 ./Project_Test/Tests/test_0/test.s
+%line 173+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 112], rax
  add qword [malloc_pointer], 1+8*2
-%line 219+0 ./Project_Test/Tests/test_0/test.s
+%line 174+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -971,10 +952,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], vector_ref
-%line 220+1 ./Project_Test/Tests/test_0/test.s
+%line 175+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 120], rax
  add qword [malloc_pointer], 1+8*2
-%line 221+0 ./Project_Test/Tests/test_0/test.s
+%line 176+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -982,10 +963,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], vector_set
-%line 222+1 ./Project_Test/Tests/test_0/test.s
+%line 177+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 128], rax
  add qword [malloc_pointer], 1+8*2
-%line 223+0 ./Project_Test/Tests/test_0/test.s
+%line 178+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -993,10 +974,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], make_vector
-%line 224+1 ./Project_Test/Tests/test_0/test.s
+%line 179+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 136], rax
  add qword [malloc_pointer], 1+8*2
-%line 225+0 ./Project_Test/Tests/test_0/test.s
+%line 180+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1004,10 +985,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], symbol_to_string
-%line 226+1 ./Project_Test/Tests/test_0/test.s
+%line 181+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 144], rax
  add qword [malloc_pointer], 1+8*2
-%line 227+0 ./Project_Test/Tests/test_0/test.s
+%line 182+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1015,10 +996,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], char_to_integer
-%line 228+1 ./Project_Test/Tests/test_0/test.s
+%line 183+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 152], rax
  add qword [malloc_pointer], 1+8*2
-%line 229+0 ./Project_Test/Tests/test_0/test.s
+%line 184+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1026,10 +1007,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], integer_to_char
-%line 230+1 ./Project_Test/Tests/test_0/test.s
+%line 185+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 160], rax
  add qword [malloc_pointer], 1+8*2
-%line 231+0 ./Project_Test/Tests/test_0/test.s
+%line 186+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1037,10 +1018,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], is_eq
-%line 232+1 ./Project_Test/Tests/test_0/test.s
+%line 187+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 168], rax
  add qword [malloc_pointer], 1+8*2
-%line 233+0 ./Project_Test/Tests/test_0/test.s
+%line 188+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1048,10 +1029,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_add
-%line 234+1 ./Project_Test/Tests/test_0/test.s
+%line 189+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 176], rax
  add qword [malloc_pointer], 1+8*2
-%line 235+0 ./Project_Test/Tests/test_0/test.s
+%line 190+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1059,10 +1040,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_mul
-%line 236+1 ./Project_Test/Tests/test_0/test.s
+%line 191+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 184], rax
  add qword [malloc_pointer], 1+8*2
-%line 237+0 ./Project_Test/Tests/test_0/test.s
+%line 192+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1070,10 +1051,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_sub
-%line 238+1 ./Project_Test/Tests/test_0/test.s
+%line 193+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 192], rax
  add qword [malloc_pointer], 1+8*2
-%line 239+0 ./Project_Test/Tests/test_0/test.s
+%line 194+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1081,10 +1062,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_div
-%line 240+1 ./Project_Test/Tests/test_0/test.s
+%line 195+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 200], rax
  add qword [malloc_pointer], 1+8*2
-%line 241+0 ./Project_Test/Tests/test_0/test.s
+%line 196+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1092,10 +1073,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_lt
-%line 242+1 ./Project_Test/Tests/test_0/test.s
+%line 197+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 208], rax
  add qword [malloc_pointer], 1+8*2
-%line 243+0 ./Project_Test/Tests/test_0/test.s
+%line 198+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1103,10 +1084,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], bin_equ
-%line 244+1 ./Project_Test/Tests/test_0/test.s
+%line 199+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 216], rax
  add qword [malloc_pointer], 1+8*2
-%line 245+0 ./Project_Test/Tests/test_0/test.s
+%line 200+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1114,10 +1095,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], car
-%line 246+1 ./Project_Test/Tests/test_0/test.s
+%line 201+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 224], rax
  add qword [malloc_pointer], 1+8*2
-%line 247+0 ./Project_Test/Tests/test_0/test.s
+%line 202+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1125,10 +1106,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], cdr
-%line 248+1 ./Project_Test/Tests/test_0/test.s
+%line 203+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 232], rax
  add qword [malloc_pointer], 1+8*2
-%line 249+0 ./Project_Test/Tests/test_0/test.s
+%line 204+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1136,10 +1117,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], set_car
-%line 250+1 ./Project_Test/Tests/test_0/test.s
+%line 205+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 240], rax
  add qword [malloc_pointer], 1+8*2
-%line 251+0 ./Project_Test/Tests/test_0/test.s
+%line 206+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1147,10 +1128,10 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], set_cdr
-%line 252+1 ./Project_Test/Tests/test_0/test.s
+%line 207+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 248], rax
  add qword [malloc_pointer], 1+8*2
-%line 253+0 ./Project_Test/Tests/test_0/test.s
+%line 208+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -1158,145 +1139,13 @@ mov rbp, rsp
  mov byte [rax], 9
  mov qword [rax+1], const_tbl+1
  mov qword [rax+1+8], cons
-%line 254+1 ./Project_Test/Tests/test_0/test.s
+%line 209+1 ./Project_Test/Tests/test_0/test.s
  mov [fvar_tbl + 256], rax
 
 
 
 
  forDebug:
-
-
- add qword [malloc_pointer], 1+8*2
-%line 262+0 ./Project_Test/Tests/test_0/test.s
- push 1+8*2
- mov rax, qword [malloc_pointer]
- sub rax, [rsp]
- add rsp, 8
- mov byte [rax], 9
- mov qword [rax+1], const_tbl+1
- mov qword [rax+1+8], Lcode0
-%line 263+1 ./Project_Test/Tests/test_0/test.s
-jmp Lcont0
-Lcode0:
- push rbp
-mov rbp, rsp
-
- add qword [malloc_pointer], 16
-%line 268+0 ./Project_Test/Tests/test_0/test.s
- push 16
- mov r9, qword [malloc_pointer]
- sub r9, [rsp]
- add rsp, 8
-%line 269+1 ./Project_Test/Tests/test_0/test.s
- add qword [malloc_pointer], 1+8*2
-%line 269+0 ./Project_Test/Tests/test_0/test.s
- push 1+8*2
- mov rax, qword [malloc_pointer]
- sub rax, [rsp]
- add rsp, 8
- mov byte [rax], 9
- mov qword [rax+1], r9
- mov qword [rax+1+8], Lcode1
-%line 270+1 ./Project_Test/Tests/test_0/test.s
-mov qword rbx, [rbp + 8 * 2]
-
-mov qword r8, [rbx + 0]
-mov qword [r9 + 8], r8
-
-mov r13, qword [rbp+8*3]
- add qword [malloc_pointer], r13
-%line 276+0 ./Project_Test/Tests/test_0/test.s
- push r13
- mov rdx, qword [malloc_pointer]
- sub rdx, [rsp]
- add rsp, 8
-%line 277+1 ./Project_Test/Tests/test_0/test.s
-mov rcx, qword [rbp+3*8]
- mov r12, 0
- copyParamsLoop0:
- mov r13, r12
- add r13, 4
- mov rbx, [rbp + 8*r13]
- mov [rdx + 8*r12], rbx
- inc r12
- dec rcx
- jne copyParamsLoop0
-mov qword [r9], rdx
-
-jmp Lcont1
-Lcode1:
- push rbp
-mov rbp, rsp
-
- mov rax, qword[rbp + 8*2]
-mov rax, qword [rax + 8 * 0]
-mov rax, qword [rax + 8 * 0]
-leave
-ret
-Lcont1:
-
-leave
-ret
-Lcont0:
-
-mov qword [fvar_tbl+264], rax
-mov rax, const_tbl+0
- call write_sob_if_not_void
-
-
-
-push 0
-
-
-mov rax , const_tbl + 6
- push rax
-push 1
-
-mov rax, qword [fvar_tbl+264]
-
-cmp byte [rax], 9
-jne NotAClosure1
-
-push qword [rax+1]
-call [rax+1+8]
-
-
-add rsp, 8*1
-pop rbx
-shl rbx, 3
-add rsp, rbx
-jmp FinishedApplic1
-
-NotAClosure1:
- mov rdi, notACLosureError
- call print_string
- mov rax, 1
- syscall
-FinishedApplic1:
-
-
-cmp byte [rax], 9
-jne NotAClosure0
-
-push qword [rax+1]
-call [rax+1+8]
-
-
-add rsp, 8*1
-pop rbx
-shl rbx, 3
-add rsp, rbx
-jmp FinishedApplic0
-
-NotAClosure0:
- mov rdi, notACLosureError
- call print_string
- mov rax, 1
- syscall
-FinishedApplic0:
-
- call write_sob_if_not_void
 leave
  ret
 
@@ -1487,14 +1336,14 @@ string_length:
  mov rsi, qword [rbp+(4+0)*8]
  mov rsi, qword [rsi+1]
  add qword [malloc_pointer], 1+8
-%line 551+0 ./Project_Test/Tests/test_0/test.s
+%line 404+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 552+1 ./Project_Test/Tests/test_0/test.s
+%line 405+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1512,14 +1361,14 @@ string_ref:
 
  mov sil, byte [rsi]
  add qword [malloc_pointer], 1+1
-%line 568+0 ./Project_Test/Tests/test_0/test.s
+%line 421+0 ./Project_Test/Tests/test_0/test.s
  push 1+1
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 6
  mov byte [rax+1], sil
-%line 569+1 ./Project_Test/Tests/test_0/test.s
+%line 422+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1555,7 +1404,7 @@ make_string:
  and rdi, 255
 
  lea rax, [rsi+8+1]
-%line 603+0 ./Project_Test/Tests/test_0/test.s
+%line 456+0 ./Project_Test/Tests/test_0/test.s
  add qword [malloc_pointer], rax
  push rax
  mov rax, qword [malloc_pointer]
@@ -1567,15 +1416,15 @@ make_string:
  add rax,8+1
  mov rcx, rsi
  cmp rcx, 0
-..@128.str_loop:
- jz ..@128.str_loop_end
+..@123.str_loop:
+ jz ..@123.str_loop_end
  dec rcx
  mov byte [rax+rcx], dil
- jmp ..@128.str_loop
-..@128.str_loop_end:
+ jmp ..@123.str_loop
+..@123.str_loop_end:
  pop rcx
  sub rax, 8+1
-%line 604+1 ./Project_Test/Tests/test_0/test.s
+%line 457+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1587,14 +1436,14 @@ vector_length:
  mov rsi, qword [rbp+(4+0)*8]
  mov rsi, qword [rsi+1]
  add qword [malloc_pointer], 1+8
-%line 614+0 ./Project_Test/Tests/test_0/test.s
+%line 467+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 615+1 ./Project_Test/Tests/test_0/test.s
+%line 468+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1644,7 +1493,7 @@ make_vector:
 
 
  lea rax, [rsi*8+8+1]
-%line 663+0 ./Project_Test/Tests/test_0/test.s
+%line 516+0 ./Project_Test/Tests/test_0/test.s
  add qword [malloc_pointer], rax
  push rax
  mov rax, qword [malloc_pointer]
@@ -1656,15 +1505,15 @@ make_vector:
  add rax, 8+1
  mov rcx, rsi
  cmp rcx, 0
-..@138.vec_loop:
- jz ..@138.vec_loop_end
+..@133.vec_loop:
+ jz ..@133.vec_loop_end
  dec rcx
  mov qword [rax+rcx*8], rdi
- jmp ..@138.vec_loop
-..@138.vec_loop_end:
+ jmp ..@133.vec_loop
+..@133.vec_loop_end:
  sub rax, 8+1
  pop rcx
-%line 664+1 ./Project_Test/Tests/test_0/test.s
+%line 517+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1685,24 +1534,24 @@ symbol_to_string:
 
  mov dil, byte [rdi]
  add qword [malloc_pointer], 1+1
-%line 683+0 ./Project_Test/Tests/test_0/test.s
+%line 536+0 ./Project_Test/Tests/test_0/test.s
  push 1+1
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 6
  mov byte [rax+1], dil
-%line 684+1 ./Project_Test/Tests/test_0/test.s
+%line 537+1 ./Project_Test/Tests/test_0/test.s
  push rax
  add qword [malloc_pointer], 1+8
-%line 685+0 ./Project_Test/Tests/test_0/test.s
+%line 538+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rcx
-%line 686+1 ./Project_Test/Tests/test_0/test.s
+%line 539+1 ./Project_Test/Tests/test_0/test.s
  push rax
  push 2
  push const_tbl+1
@@ -1738,14 +1587,14 @@ char_to_integer:
  movzx rsi, byte [rsi+1]
  and rsi, 255
  add qword [malloc_pointer], 1+8
-%line 720+0 ./Project_Test/Tests/test_0/test.s
+%line 573+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 721+1 ./Project_Test/Tests/test_0/test.s
+%line 574+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1759,14 +1608,14 @@ integer_to_char:
  mov rsi, qword [rsi+1]
  and rsi, 255
  add qword [malloc_pointer], 1+1
-%line 733+0 ./Project_Test/Tests/test_0/test.s
+%line 586+0 ./Project_Test/Tests/test_0/test.s
  push 1+1
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 6
  mov byte [rax+1], sil
-%line 734+1 ./Project_Test/Tests/test_0/test.s
+%line 587+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret
@@ -1859,27 +1708,27 @@ bin_add:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 825+0 ./Project_Test/Tests/test_0/test.s
+%line 678+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 826+1 ./Project_Test/Tests/test_0/test.s
+%line 679+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 830+0 ./Project_Test/Tests/test_0/test.s
+%line 683+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 831+1 ./Project_Test/Tests/test_0/test.s
+%line 684+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -1955,27 +1804,27 @@ bin_mul:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 905+0 ./Project_Test/Tests/test_0/test.s
+%line 758+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 906+1 ./Project_Test/Tests/test_0/test.s
+%line 759+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 910+0 ./Project_Test/Tests/test_0/test.s
+%line 763+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 911+1 ./Project_Test/Tests/test_0/test.s
+%line 764+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -2051,27 +1900,27 @@ bin_sub:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 985+0 ./Project_Test/Tests/test_0/test.s
+%line 838+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 986+1 ./Project_Test/Tests/test_0/test.s
+%line 839+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 990+0 ./Project_Test/Tests/test_0/test.s
+%line 843+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 991+1 ./Project_Test/Tests/test_0/test.s
+%line 844+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -2147,27 +1996,27 @@ bin_div:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1065+0 ./Project_Test/Tests/test_0/test.s
+%line 918+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 1066+1 ./Project_Test/Tests/test_0/test.s
+%line 919+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1070+0 ./Project_Test/Tests/test_0/test.s
+%line 923+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 1071+1 ./Project_Test/Tests/test_0/test.s
+%line 924+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -2243,27 +2092,27 @@ bin_lt:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1145+0 ./Project_Test/Tests/test_0/test.s
+%line 998+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 1146+1 ./Project_Test/Tests/test_0/test.s
+%line 999+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1150+0 ./Project_Test/Tests/test_0/test.s
+%line 1003+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 1151+1 ./Project_Test/Tests/test_0/test.s
+%line 1004+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -2351,27 +2200,27 @@ bin_equ:
 
  cvttsd2si rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1237+0 ./Project_Test/Tests/test_0/test.s
+%line 1090+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 3
  mov qword [rax+1], rsi
-%line 1238+1 ./Project_Test/Tests/test_0/test.s
+%line 1091+1 ./Project_Test/Tests/test_0/test.s
  jmp .return
 
 .return_float:
  movq rsi, xmm0
  add qword [malloc_pointer], 1+8
-%line 1242+0 ./Project_Test/Tests/test_0/test.s
+%line 1095+0 ./Project_Test/Tests/test_0/test.s
  push 1+8
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
  add rsp, 8
  mov byte [rax], 4
  mov qword [rax+1], rsi
-%line 1243+1 ./Project_Test/Tests/test_0/test.s
+%line 1096+1 ./Project_Test/Tests/test_0/test.s
 
 .return:
 
@@ -2411,32 +2260,32 @@ cdr:
  ret
 
 set_car:
+ push rbp
+ mov rbp, rsp
 
+ mov rsi, qword [rbp+(4+0)*8]
+ mov rsi, qword [rsi+1]
+ mov rdi, qword [rbp+(4+1)*8]
 
+ mov [rsi], rdi
+ mov rax, const_tbl+0
 
-
-
-
-
-
-
-
-
-
+ leave
+ ret
 
 set_cdr:
+ push rbp
+ mov rbp, rsp
 
+ mov rsi, qword [rbp+(4+0)*8]
+ mov rsi, qword [rsi+1+8]
+ mov rdi, qword [rbp+(4+1)*8]
 
+ mov [rsi], rdi
+ mov rax, const_tbl+0
 
-
-
-
-
-
-
-
-
-
+ leave
+ ret
 
 cons:
  push rbp
@@ -2445,7 +2294,7 @@ cons:
  mov rsi, qword [rbp+(4+0)*8]
  mov rdi, qword [rbp+(4+1)*8]
  add qword [malloc_pointer], 1+8*2
-%line 1315+0 ./Project_Test/Tests/test_0/test.s
+%line 1168+0 ./Project_Test/Tests/test_0/test.s
  push 1+8*2
  mov rax, qword [malloc_pointer]
  sub rax, [rsp]
@@ -2453,7 +2302,7 @@ cons:
  mov byte [rax], 10
  mov qword [rax+1], rsi
  mov qword [rax+1+8], rdi
-%line 1316+1 ./Project_Test/Tests/test_0/test.s
+%line 1169+1 ./Project_Test/Tests/test_0/test.s
 
  leave
  ret

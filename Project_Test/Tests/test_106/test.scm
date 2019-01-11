@@ -1,3 +1,3 @@
    
-              (zero? (- 5 (+ 1 2 2)))  
+                (string-ref "string" 1)
     

@@ -1,3 +1,3 @@
    
-                (pair? '())                                 ; excpetion - wrong number of arguments
+                (list #t #t #f #t)                          ; (#t . (#t . (#f . (#t . ()))))
     

@@ -1,3 +1,3 @@
    
-               (vector-set! '#(4 5 6) 1 7) 
+                (set-cdr! '(a b c) '(x y z))
     

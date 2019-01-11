@@ -1,3 +1,3 @@
    
-              (zero? 0e10)                                 ; #t  
+                (string-length "a")
     

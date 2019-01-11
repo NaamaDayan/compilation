@@ -1,3 +1,3 @@
    
-                (string? 2)
+                (number? #t)                                ; #f
     

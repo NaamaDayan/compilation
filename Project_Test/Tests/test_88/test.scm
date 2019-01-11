@@ -1,3 +1,3 @@
    
-              (string? "string")                          ; #t  
+                (number? -1)                                ; #t
     
