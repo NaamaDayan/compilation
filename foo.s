@@ -53,51 +53,8 @@ db %1
 %endrep
 %endmacro
 
-%define TYPE(r) byte [r]
-%define DATA(r) [r+TYPE_SIZE]
-
-%define INT_DATA(r) qword DATA(r)
-%define FLOAT_DATA(r) qword DATA(r)
-%define CHAR_DATA(r) byte DATA(r)
-%define BOOL_DATA(r) byte DATA(r)
-
-%define STR_LEN(r) qword DATA(r)
-%define STR_DATA_PTR(r) r + WORD_BYTES+ TYPE_SIZE
-%define STRING_REF(r,i) byte [r+WORD_BYTES+ TYPE_SIZE + i]
-
-%define LOWER_DATA(sob) qword [sob+ TYPE_SIZE]
-%define UPPER_DATA(sob) qword [sob+WORD_BYTES +TYPE_SIZE]
-%define CAR LOWER_DATA
-%define CDR UPPER_DATA
-%define ENV LOWER_DATA
-%define BODY UPPER_DATA
-%define VECTOR_LEN LOWER_DATA
-%define VECTOR_REF(r,i) qword [r+TYPE_SIZE+WORD_BYTES+i*WORD_BYTES]
 
 %define PARAM_COUNT qword [rbp+3*WORD_SIZE]
-
-%macro SHIFT_FRAME 1
-  push rax
-  mov rax, PARAM_COUNT
-  add rax, 4
-%assign i 1
-%rep %1
-  dec rax
-  mov r8, rbp
-  sub qword r8, WORD_BYTES*i
-  mov r8, [r8]  
-  mov [rbp+WORD_BYTES*rax], r8
-% assign i i+1
-%endrep
-  pop rax
-%endmacro
-
-;%1 = param count in old frame
-%macro CLEAN_STACK 1
-  add rsp, WORD_BYTES * (4+%1)
-%endmacro
-
-;;end self written macros!!!
 
 
 notACLosureError: ;;there was a dot before this line!
@@ -107,8 +64,8 @@ MAKE_VOID
 MAKE_NIL
 MAKE_LITERAL T_BOOL, db 0
 MAKE_LITERAL T_BOOL, db 1
-MAKE_LITERAL_INT 5
-MAKE_LITERAL_INT 0
+MAKE_LITERAL_INT 2
+MAKE_LITERAL_PAIR(const_tbl+6, const_tbl+1)
 ;;
 ;;; These macro definitions are required for the primitive
 ;;; definitions in the epilogue to work properly
@@ -120,7 +77,6 @@ MAKE_LITERAL_INT 0
 
 
 fvar_tbl:
-dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
 dq T_UNDEFINED
@@ -254,38 +210,34 @@ mov rbp, rsp
     mov [fvar_tbl + 248], rax
     MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, cons)
     mov [fvar_tbl + 256], rax
+    MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, apply)
+    mov [fvar_tbl + 264], rax
  ;;add rsp, 4*8
  ;;pop rbp
  ;;ret
  
  forDebug:
-;define(Var'(VarFree))
 ;applic
-;varFree
-mov rax, qword [fvar_tbl+256]
+;const
+mov rax    , const_tbl + 15
  push rax
-;varFree
-mov rax, qword [fvar_tbl+232]
- push rax
-;varFree
-mov rax, qword [fvar_tbl+224]
- push rax
-;varFree
-mov rax, qword [fvar_tbl+32]
- push rax
-push 4
 ;lambdaSimple
 MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode0)
 jmp Lcont0
 Lcode0:
  push rbp
 mov rbp, rsp
-;const
-mov rax    , const_tbl + 6
+
+;varParam
+ mov rax, qword [rbp + 8*(4 + 0)]
 leave
 ret
 Lcont0:
  
+ push rax
+push 2
+;varFree
+mov rax, qword [fvar_tbl+264]
 ;check if closure 
 cmp byte [rax], T_CLOSURE
 jne NotAClosure0
@@ -307,139 +259,141 @@ NotAClosure0:
 	syscall
 FinishedApplic0:
 
-mov qword [fvar_tbl+264], rax
-mov rax, SOB_VOID_ADDRESS
-    call write_sob_if_not_void
-
-
-;define(Var'(VarFree))
-;applic
-;varFree
-mov rax, qword [fvar_tbl+216]
- push rax
-push 1
-;lambdaSimple
-MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, Lcode1)
-jmp Lcont1
-Lcode1:
- push rbp
-mov rbp, rsp
-;lambdaSimple
-MALLOC r9, 16 ;r9 = extEnv pointer
-MAKE_CLOSURE (rax, r9, Lcode2)
-mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer
-;copyEnvLoop - r9[i+1] = rbx[i]:
-mov qword r8, [rbx + 0] ;go to lexical env , tmp val is in r8
-mov qword [r9 + 8], r8
-
-mov r13, qword [rbp+8*3] 
-MALLOC rdx, r13 ;number of params of prev env * 8
-mov rcx, qword [rbp+3*8] ; rcx = param count
-	    	mov r12, 0 ; r12 = i 
-	       copyParamsLoop1:
-	    		mov r13, r12
-	    		add r13, 4
-	    		mov rbx, [rbp + 8*r13] ;rbx = param(i)
-	    		mov [rdx + 8*r12], rbx ;rdx = extEnv[0], rdx[i] = rbx
-	    		inc r12
-	    		dec rcx
-	    		jne copyParamsLoop1
-mov qword [r9], rdx
- ;rdx is the params vector
-jmp Lcont2
-Lcode2:
- push rbp
-mov rbp, rsp
-;applicTP
-;const
-mov rax    , const_tbl + 15
- push rax
-;varParam
- mov rax, qword [rbp + 8*(4 + 0)]
- push rax
-push 2
-;varBound
- mov rax, qword[rbp + 8*2]
-mov rax, qword [rax + 8 * 0]
-mov rax, qword [rax + 8 * 0]
-mov r13, rax ;save closure
-cmp byte [rax], T_CLOSURE
-jne NotAClosureTP0
-push qword [rax + TYPE_SIZE] ;push env
-push qword [rbp + WORD_BYTES*1] ;old ret address
-mov qword r10, [rbp] ; r10 = old old rbp
-mov r11, PARAM_COUNT ; save old param count 
-push rax
-mov rax, PARAM_COUNT
-add rax, 4
-mov rcx, 5 ;;check! maybe add 4 instead
-mov r12, 1
-Loop0:
-dec rax
-mov r8, rbp
-push rax
-mov rax, WORD_SIZE
-mul r12
-sub r8, rax
-pop rax
-mov r8, [r8]  
-mov [rbp+WORD_BYTES*rax], r8
-inc r12
-dec rcx
-jne Loop0
-
-pop rax
-;clean stack: add rsp , WORD_BYTES*(r11+4)
-;push rax
-;mov rax, WORD_SIZE
-add r11, 4
-shl r11,3
-add rsp, r11
-;pop rax
-
-;pop rax
-mov rbp, r10 ;risky line!!!!!  maybe save in rbp instead (brama) , save old old rbp
-jmp [r13 + TYPE_SIZE + WORD_BYTES]
-NotAClosureTP0:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-
-leave
-ret
-Lcont2:
- 
-leave
-ret
-Lcont1:
- 
-;check if closure 
-cmp byte [rax], T_CLOSURE
-jne NotAClosure1
-
-push qword [rax+TYPE_SIZE]  ;push env:
-call [rax+TYPE_SIZE+WORD_SIZE] ;call closure_code:
-
-;cleaning the stack 
-add rsp, 8*1 ; pop env
-pop rbx ; pop arg count
-shl rbx, 3 ; rbx = rbx * 8
-add rsp, rbx; pop args
-jmp FinishedApplic1
-
-NotAClosure1:
-	mov rdi, notACLosureError
-	call print_string
-	mov rax, 1
-	syscall
-FinishedApplic1:
-
-mov qword [fvar_tbl+272], rax
-mov rax, SOB_VOID_ADDRESS
     call write_sob_if_not_void
 leave
  ret
+%macro SHIFT_FRAME_2 1
+        push rax
+        mov rax, qword[rbp+24] 
+        add rax, 4
+        mov rcx,rax
+        shl rcx, 3 
+        mov r13, 1  ;; %assign i 1
+        
+  ;%rep %1
+    %%loop_shift:  
+        cmp %1, 0
+        je %%loop_shift_end
+        dec rax
+        mov r14, r13  ;; r14 = i
+        shl r14,3     ;; r14 = 8 * i
+        mov r10, rbp  ;; r12 = rbp
+        sub r10, r14  ;; r12 = rbp-WORD_BYTES* i
+        ;;mov rdi, [rbp-WORD_BYTES* i]
+        mov rdi , [r10]
+        mov [rbp+WORD_BYTES*rax], rdi
+        dec %1
+        inc r13 ;%assign i i+1
+        jmp %%loop_shift
+    %%loop_shift_end:
+    ;%endrep
+    pop rax
+    add rsp, rcx
+    mov rbp, rsp
+%endmacro
+
+
+apply:
+        push rbp
+        mov rbp, rsp
+        mov r12, 0 ;; we will use to count number of args in list
+        mov r11 , PARAM_COUNT
+        sub r11, 1
+        mov r10, PVAR(r11) ;; last argument is list -> rsi
+        .pushListToStack:
+         cmp byte [r10], T_NIL
+         je .endPushList
+    CAR r9, r10
+    CDR r10, r10
+    push r9
+    add r12, 1
+    jmp .pushListToStack
+
+.endPushList:
+    mov r8, 0 ;; we will use a counter
+    mov r9 , r12 
+    dec r9
+
+.reverseStack:
+    cmp r9, r8
+    jle .endReverse 
+    mov r15, [rsp + 8 * r9]
+    mov r14, [rsp + 8 * r8]
+    mov [rsp + 8 * r9], r14
+    mov [rsp + 8 * r8], r15
+    dec r9
+    inc r8
+    jmp .reverseStack
+    
+.endReverse:
+    mov rcx , qword [rbp + 8*3]
+    dec rcx ;remove proc arg
+    dec rcx ;remove list arg
+.pushRestArgs:
+    cmp rcx, 0 
+    jle .finishPushRest
+    push PVAR(rcx)
+    sub rcx, 1
+    jmp .pushRestArgs
+    
+.finishPushRest:
+    add r12, qword [rbp+8*3]
+    sub r12, 2
+    push r12 ;push arg count
+    mov rax, qword [rbp + 8*4] ; rax = closure
+    cmp byte [rax], T_CLOSURE
+    jne .exit
+    CLOSURE_ENV rdi,rax
+    push rdi ; push closure env
+    mov r15, qword [rbp] ; old rbp
+    push qword [rbp + 8] ; push ret 
+ 
+ 
+ .shift_frame:
+    add r12 , 4
+push rax
+    mov rax, PARAM_COUNT
+    add rax, 4
+    mov r10, rax
+    shl r10, 3 ;r10 = 8*frame size, save for later
+    mov rcx, r12 ; loop index
+    mov r9, 1 
+  	
+    .loopLabel:
+    cmp rcx, 0
+    je .cleanStack
+    dec rcx
+    dec rax
+    mov r8, rbp
+    mov rdi, r9
+    shl rdi, 3
+  	sub r8, rdi
+  	mov r8, [r8] ;r8 = [rbp-i*8]
+        mov [rbp + 8*rax], r8
+  	inc r9
+  	jne .loopLabel
+    
+    .cleanStack:
+pop rax
+    add rsp, r10
+    mov rbp, rsp
+    
+  .end:  
+  mov rbp,r15
+  jmp qword [rax+TYPE_SIZE+WORD_BYTES] ;jmp code of closure
+  ;add rsp , 8 ; pop the env
+  ;pop r10 ; pop n
+  ;shl r10 , 3 ; rbx = rbx * 8
+  ;add rsp , r10 ;  pop args
+  ; jmp .endApply 
+.exit:
+mov rdi, 0;return code 0
+mov rax, 60 ; system call 60 is exit
+syscall 
+;.endApply:
+;leave
+;ret   
+
 
 is_boolean:
     push rbp
@@ -1358,32 +1312,32 @@ cdr:
     ret
     
 set_car:
- ;   push rbp
- ;   mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;CAR rsi, rsi
-    ;mov rdi, PVAR(1) ;new car
+    mov rsi, PVAR(0) 
+    CAR rsi, rsi
+    mov rdi, PVAR(1) ;new car
 
-    ;mov [rsi], rdi
-    ;mov rax, SOB_VOID_ADDRESS
+    mov [rsi], rdi
+    mov rax, SOB_VOID_ADDRESS
 
-    ;leave
-    ;ret
+    leave
+    ret
     
 set_cdr:
-    ;push rbp
-    ;mov rbp, rsp
+    push rbp
+    mov rbp, rsp
 
-    ;mov rsi, PVAR(0) 
-    ;CDR rsi, rsi
-    ;mov rdi, PVAR(1) ;new cdr
+    mov rsi, PVAR(0) 
+    CDR rsi, rsi
+    mov rdi, PVAR(1) ;new cdr
 
-    ;mov [rsi], rdi
-    ;mov rax, SOB_VOID_ADDRESS
+    mov [rsi], rdi
+    mov rax, SOB_VOID_ADDRESS
 
-    ;leave
-    ;ret
+    leave
+    ret
     
 cons:
     push rbp

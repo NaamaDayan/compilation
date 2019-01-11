@@ -1,81 +1,204 @@
 apply:
         push rbp
         mov rbp, rsp
-        push SOB_NIL_ADDRESS ;; push magicarg
-        xor r8, r8 ;; we will use to count number of args in list
-        mov r9 , PARAM_COUNT
+        mov r12, 0 ;r12 = param counter
+        mov r11, qword [rbp+8*3]
+        sub r11, 1
+        mov r10, PVAR(r11) ; r10 = list
+        .pushListToStack:
+        cmp byte [r10], T_NIL
+        je .pushRest
+        CAR r9, r10 ;r9 = ELEMENT(i)
+        CDR r10, r10
+        push r9
+        inc r12
+        jmp .pushListToStack
+        
+        ;reverse stack values
+        mov r8, 0 ;r8 = i
+        mov r9, r12
+        dec r9 ; r11 = n-1
+        
+        .reverseStack:
+        cmp r9, r8
+        je .pushRest 
+        mov r11, [rsp + 8 * r9]
+        mov r10, [rsp + 8 * r8]
+        mov [rsp +8*r9], r10
+        mov [rsp +8*r8], r11
         dec r9
-        mov rsi, PVAR(r9) ;; last argument is list -> rsi
-        .get_list_params:
-         mov dl, byte [rsi]
-         cmp dl, T_NIL
-         je .pre_rearange_args
-         cmp dl, T_PAIR
-         je .push_arg
-         jmp .wrong_type
-.push_arg:
-    CAR r10, rsi
-    CDR rsi, rsi
-    push r10
-    inc r8
-    jmp .get_list_params
-
-.pre_rearange_args:
-    xor r10 , r10 ;; we will use a counter
-    mov r11 , r8 
-    dec r11
-
-.rearange_args:
-    cmp r10, r11
-    jge .pre_push_rest_args 
-    mov r14, [rsp + 8 * r10]
-    mov r15, [rsp + 8 * r11]
-    mov [rsp + 8 * r10], r15
-    mov [rsp + 8 * r11], r14
-    inc r10
-    dec r11
-    jmp .rearange_args
-.pre_push_rest_args:
-    mov r9 , PARAM_COUNT
-    sub r9, 2
-.push_rest_args:
-    cmp r9, 0 
-    jle .end_stack
-    mov rsi, PVAR(r9)
-    push rsi
-    dec r9
-    jmp .push_rest_args
-.end_stack:
-    mov r9 , PARAM_COUNT
-    sub r9, 2 ;; remember proc is also an argument
-    add r9, r8
-    push r9 ;; push arg count
-    mov rsi ,PVAR(0)
-    cmp byte [rsi], T_CLOSURE
-    jne .wrong_type
-    CLOSURE_ENV rdi,rsi
-    push rdi ;; push closure env
-    push qword [rbp + 8] ;; push ret adress
-    mov r15, qword [rbp] ;;save old rbp
+        inc r8
+        jmp .reverseStack
+        
+        .pushRest:
+        mov rcx, qword [rbp+8*3]
+        sub rcx, 1
+        sub rcx, 1 ; rcx = n-2, -2 because the closure is also one of the args!
+        
+        .pushRestLoop:
+        cmp rcx, 0 
+        je .endLoop
+        mov r10, rcx
+        add r10, 4
+        shl r10, 3 ;r10 = (n-2+4)*8
+        push qword [rbp+r10]
+        sub rcx, 1
+        jmp .pushRestLoop
     
- .shift_frame:
-    add r9 , 5
-    SHIFT_FRAME_2 r9
+        .endLoop:
+        add r12, qword [rbp + 8 *3] 
+        sub r12, 2 ;remove closure and list elements
+        push r12 ; r12 = num of args
+        mov rax ,qword [rbp + 8*4] ;rax = closure
+        cmp byte [rax], T_CLOSURE
+        jne .exit
+        CLOSURE_ENV r9,rax
+        push r9 ; push env
+        push qword [rbp + 8] ; ret adress
+        mov r14, qword [rbp] ;save old rbp
     
-  
-  .end:  
-  mov rbp,r15
-  jmp qword [rsi+9]
-  add rsp , 8*1 ; pop env
-  pop rbx ; pop arg count
-  inc rbx ; for remove magic
-  shl rbx , 3 ; rbx = rbx * 8
-  add rsp , rbx ;  pop args
-  jmp .return 
-.wrong_type:
-    mov     rax, 60               ; system call 60 is exit
-    xor     rdi,rdi           ;return code 0
-    syscall 
-.return:
-    leave
-    ret  
+        ; shift frame
+        add r12 , 4 ; r12 = frame size        
+ 	push rax
+  	mov rax, PARAM_COUNT
+  	add rax, 4
+  	mov r10, rax
+  	shl r10, 3 ;r10 = 8*frame size, save for later
+  	mov rcx, r12 ; loop index
+  	mov r13, 1 
+  	
+  	.loopLabel:
+  	dec rax
+  	mov r8, rbp
+  	shl r13, 3
+  	sub r8, r13
+  	mov r8, [r8] ;r8 = [rbp-i*8]
+        mov [rbp + 8*rax], r8
+  	inc r13
+  	dec rcx
+  	jne .loopLabel
+  	pop rax
+
+  	;clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
+  	add rsp, r10
+        mov rbp, rsp
+        
+        ;after shift:
+        mov rbp,r14 ;old rbp
+        call qword [rax+TYPE_SIZE+WORD_BYTES] ; rax = closure, jmp to code
+        add rsp, 8 ; pop env
+        pop rdi ; pop arg count
+        shl rdi, 3 
+        add rsp, rdi ;  pop args
+        jmp .end 
+        
+        .exit:
+        mov rax, 60 
+        mov rdi, 0
+        syscall 
+        
+        .end:
+        leave
+        ret  
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        apply:
+        push rbp
+        mov rbp, rsp
+        mov r8, 0 ;r8 = param counter
+        mov r9, qword [rbp+8*3]
+        sub r9, 1
+        mov rsi, PVAR(r9) ; r10 = list
+        .pushListToStack:
+        cmp byte [rsi], T_NIL
+        je .pushRest
+        CAR r10, rsi ;r9 = ELEMENT(i)
+        CDR rsi, rsi
+        push r10
+        inc r8
+        jmp .pushListToStack
+        
+        ;reverse stack values
+        mov r10, 0 ;r8 = i
+        mov r11, r8
+        dec r11 ; r11 = n-1
+        
+        .reverseStack:
+        cmp r10, r11
+        je .pushRest 
+        mov r14, [rsp + 8 * r10]
+        mov r15, [rsp + 8 * r11]
+        mov [rsp +8*r10], r15
+        mov [rsp +8*r11], r14
+        dec r11
+        inc r10
+        jmp .reverseStack
+        
+        .pushRest:
+        mov r9, qword [rbp+8*3]
+        sub r9, 1
+        sub r9, 1 ; rcx = n-2, -2 because the closure is also one of the args!
+    
+        .pushRestLoop:
+        cmp r9, 0 
+        je .endLoop
+        mov rsi, r9
+        add rsi, 4
+        shl rsi, 3 ;r10 = (n-2+4)*8
+        push qword [rbp+rsi]
+        sub r9, 1
+        jmp .pushRestLoop
+    
+    
+        .endLoop:
+        add r9, qword [rbp + 8 *3] 
+        sub r9, 2 ;remove closure and list elements
+        push r9 ; r12 = num of args
+        mov rsi ,qword [rbp + 8*4] ;rax = closure
+        cmp byte [rsi], T_CLOSURE
+        jne .exit
+        CLOSURE_ENV rdi,rsi
+        push rdi ; push env
+        push qword [rbp + 8] ; ret adress
+        mov r15, qword [rbp] ;save old rbp
+    
+        ; shift frame
+        add r9 , 4 ; r12 = frame size        
+ 	SHIFT_FRAME_2 r9
+        
+        ;after shift:
+        mov rbp,r15 ;old rbp
+        jmp qword [rsi+TYPE_SIZE+WORD_BYTES] ; rax = closure, jmp to code
+        add rsp, 8 ; pop env
+        pop rbx ; pop arg count
+        shl rbx, 3 
+        add rsp, rbx ;  pop args
+        jmp .end 
+        
+        .exit:
+        mov rax, 60 
+        mov rdi, 0
+        syscall 
+        
+        .end:
+        leave
+        ret  

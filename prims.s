@@ -1,106 +1,103 @@
 apply:
         push rbp
         mov rbp, rsp
-        mov r12, 0 ;r12 = param counter
-        mov r11, qword [rbp+8*3]
+        mov r12, 0 ;; we will use to count number of args in list
+        mov r11 , PARAM_COUNT
         sub r11, 1
-        mov r10, PVAR(r11) ; r10 = list
+        mov r10, PVAR(r11) ;; last argument is list -> rsi
         .pushListToStack:
-        cmp byte [r10], T_NIL
-        je .pushRest
-        CAR r9, r10 ;r9 = ELEMENT(i)
-        CDR r10, r10
-        push r9
-        inc r12
-        jmp .pushListToStack
-        
-        ;reverse stack values
-        mov r8, 0 ;r8 = i
-        mov r9, r12
-        dec r9 ; r11 = n-1
-        
-        .reverseStack:
-        cmp r9, r8
-        je .pushRest 
-        mov r11, [rsp + 8 * r9]
-        mov r10, [rsp + 8 * r8]
-        mov [rsp +8*r9], r10
-        mov [rsp +8*r8], r11
-        dec r9
-        inc r8
-        jmp .reverseStack
-        
-        .pushRest:
-        mov rcx, qword [rbp+8*3]
-        dec rcx, 1
-        dec rcx, 1 ; rcx = n-2, -2 because the closure is also one of the args!
-        
-        .pushRestLoop:
-        cmp rcx, 0 
-        je .endLoop
-        mov r10, rcx
-        add r10, 4
-        shl r10, 3 ;r10 = (n-2+4)*8
-        push qword [rbp+r10]
-        sub rcx, 1
-        jmp .pushRestLoop
+         cmp byte [r10], T_NIL
+         je .endPushList
+    CAR r9, r10
+    CDR r10, r10
+    push r9
+    add r12, 1
+    jmp .pushListToStack
+
+.endPushList:
+    mov r8, 0 ;; we will use a counter
+    mov r9 , r12 
+    dec r9
+
+.reverseStack:
+    cmp r9, r8
+    jle .endReverse 
+    mov r15, [rsp + 8 * r9]
+    mov r14, [rsp + 8 * r8]
+    mov [rsp + 8 * r9], r14
+    mov [rsp + 8 * r8], r15
+    dec r9
+    inc r8
+    jmp .reverseStack
     
-        .endLoop:
-        add r12, qword [rbp + 8 *3] 
-        sub r12, 2 ;remove closure and list elements
-        push r12 ; r12 = num of args
-        mov rax ,qword [rbp + 8*4] ;rax = closure
-        cmp al, T_CLOSURE
-        jne .exit
-        CLOSURE_ENV r9,rax
-        push r9 ; push env
-        push qword [rbp + 8] ; ret adress
-        mov r14, qword [rbp] ;save old rbp
+.endReverse:
+    mov rcx , qword [rbp + 8*3]
+    dec rcx ;remove proc arg
+    dec rcx ;remove list arg
+.pushRestArgs:
+    cmp rcx, 0 
+    jle .finishPushRest
+    push PVAR(rcx)
+    sub rcx, 1
+    jmp .pushRestArgs
     
-        ; shift frame
-        add r12 , 4 ; r12 = frame size        
- 	push rax
-  	mov rax, PARAM_COUNT
-  	add rax, 4
-  	mov r10, rax
-  	shl r10, 3 ;r10 = 8*frame size, save for later
-  	mov rcx, r12 ; loop index
-  	mov r13, 1 
+.finishPushRest:
+    add r12, qword [rbp+8*3]
+    sub r12, 2
+    push r12 ;push arg count
+    mov rax, qword [rbp + 8*4] ; rax = closure
+    cmp byte [rax], T_CLOSURE
+    jne .exit
+    CLOSURE_ENV rdi,rax
+    push rdi ; push closure env
+    mov r15, qword [rbp] ; old rbp
+    push qword [rbp + 8] ; push ret 
+ 
+ 
+ .shift_frame:
+    add r12 , 4
+push rax
+    mov rax, PARAM_COUNT
+    add rax, 4
+    mov r10, rax
+    shl r10, 3 ;r10 = 8*frame size, save for later
+    mov rcx, r12 ; loop index
+    mov r9, 1 
   	
-  	.loopLabel:
-  	dec rax
-  	mov r8, rbp
-  	shl r13, 3
-  	sub r8, r13
+    .loopLabel:
+    cmp rcx, 0
+    je .cleanStack
+    dec rcx
+    dec rax
+    mov r8, rbp
+    mov rdi, r9
+    shl rdi, 3
+  	sub r8, rdi
   	mov r8, [r8] ;r8 = [rbp-i*8]
         mov [rbp + 8*rax], r8
-  	inc r13
-  	dec rcx
+  	inc r9
   	jne .loopLabel
-  	pop rax
-
-  	;clean stack: add rsp , WORD_BYTES*(r11+4)\n"^
-  	add rsp, r10
-        mov rbp, rsp
-        
-        ;after shift:
-        mov rbp,r14 ;old rbp
-        jmp qword [rax+TYPE_SIZE+WORD_BYTES] ; rax = closure, jmp to code
-        add rsp, 8 ; pop env
-        pop rdi ; pop arg count
-        shl rdi, 3 
-        add rsp, edi ;  pop args
-        jmp .end 
-        
-        .exit:
-        mov rax, 60 
-        mov rdi, 0
-        syscall 
-        
-        .end:
-        leave
-        ret   
-
+    
+    .cleanStack:
+pop rax
+    add rsp, r10
+    mov rbp, rsp
+    
+  .end:  
+  mov rbp,r15
+  jmp qword [rax+TYPE_SIZE+WORD_BYTES] ;jmp code of closure
+  ;add rsp , 8 ; pop the env
+  ;pop r10 ; pop n
+  ;shl r10 , 3 ; rbx = rbx * 8
+  ;add rsp , r10 ;  pop args
+  ; jmp .endApply 
+.exit:
+mov rdi, 0;return code 0
+mov rax, 60 ; system call 60 is exit
+syscall 
+;.endApply:
+;leave
+;ret   
 
 
 is_boolean:

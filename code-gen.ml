@@ -99,7 +99,7 @@ let make_fvars_list exprTag_lst =
    VarFree("make-vector"); VarFree("symbol->string"); 
    VarFree("char->integer"); VarFree("integer->char"); VarFree("eq?");
    VarFree("+"); VarFree("*"); VarFree("-"); VarFree("/"); VarFree("<"); VarFree("=");
-   VarFree("car"); VarFree("cdr"); VarFree("set-car!"); VarFree("set-cdr!"); VarFree("cons")] @ freeVarsList in
+   VarFree("car"); VarFree("cdr"); VarFree("set-car!"); VarFree("set-cdr!"); VarFree("cons"); VarFree("apply")] @ freeVarsList in
 	removeDuplicatesVarFreeList withInitialfreeVars;;
 
 let undefined = "MAKE_UNDEF";;
@@ -561,11 +561,11 @@ let rec genCode exp deepCounter= match exp with
   			loopLabel ^ ":\n"^
   			"dec rax\n"^
   			"mov r8, rbp\n"^
-  			"push rax\n"^
-  			"mov rax, WORD_SIZE\n"^
-  			"mul r12\n"^
-  			"sub r8, rax\n"^
-  			"pop rax\n"^
+  			";push rax\n"^
+  			";mov rax, WORD_SIZE\n"^
+  			"shl r12, 3\n"^
+  			"sub r8, r12\n"^
+  			";pop rax\n"^
   			"mov r8, [r8]  \n"^
  	  		"mov [rbp+WORD_BYTES*rax], r8\n"^
   			"inc r12\n"^
