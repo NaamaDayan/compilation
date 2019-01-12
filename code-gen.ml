@@ -315,7 +315,7 @@ let rec genCode exp deepCounter= match exp with
 	    										  "mov rax, SOB_VOID_ADDRESS"
 	    | Var'(VarBound(_, major, minor)) -> ";varBound\n mov rax, qword[rbp + 8*2]\n" ^
 	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int (major)) ^ "]\n" ^
-	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]"
+	    									 "mov rax, qword [rax + 8 * " ^ (string_of_int minor) ^ "]\n"
 		| Set'(Var'(VarBound(_, major, minor)), exp) ->";set(VarBound)\n" ^ (genCode exp deepCounter) ^ "\n" ^
 												  "mov rbx, qword[rbp + 8*2]\n" ^
 												  "mov rbx, qword [rbx + 8 * " ^ (string_of_int (major)) ^ "]\n" ^
@@ -376,13 +376,14 @@ let rec genCode exp deepCounter= match exp with
 	    let envHandling =  
 	    	if (envSize == 0) then "MAKE_CLOSURE(rax, SOB_NIL_ADDRESS, "^lcodeLabel^")\n"
 	    	else "MALLOC r9, "^ (string_of_int ((envSize+1)*8)) ^ " ;r9 = extEnv pointer\n" ^
-	    		 "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n" ^
 	    		 "mov qword rbx, [rbp + 8 * 2] ;rbx is lexical env pointer\n" ^
 	    		 (copyEnvLoop 0 envSize "") ^ "\n" ^ 
 	    		 "mov r13, qword [rbp+8*3] \n"^
+	    		 "shl r13, 3\n" ^
 	    		 "MALLOC rdx, r13 ;number of params of prev env * 8\n" ^ 
 	    		 (copyParams kind) ^ "\n" ^
-	    		 "mov qword [r9], rdx\n ;rdx is the params vector\n"
+	    		 "mov qword [r9], rdx ;rdx is the params vector\n" ^
+	    		 "MAKE_CLOSURE (rax, r9, "^lcodeLabel^")\n"
 	    			in
 	    envHandling ^
 	    "jmp " ^ lcontLabel ^ "\n" ^
@@ -421,14 +422,17 @@ let rec genCode exp deepCounter= match exp with
 
 	    and lambdaOptCodeGen args body envSize =
 	    let num = !lambdaOptCounter in
-	    let lcodeLabel = (makeNumberedLabel "Lcode" num) in
-	    let lcontLabel = (makeNumberedLabel "Lcont" num) in 
-	    (lambdaOptCounter := !lambdaOptCounter + 1) ; (code_before_body envSize lcodeLabel lcontLabel "Opt") ^" \n"^
-	    (fixStack args num) ^ (genCode body (envSize+1)) ^ "\n" ^
+	    (lambdaOptCounter := num + 1);
+	    let body = (genCode body (envSize+1)) in
+	    let lcodeLabel = (makeNumberedLabel "LcodeOpt" num) in
+	    let lcontLabel = (makeNumberedLabel "LcontOpt" num) in 
+	    let beforeBody = (code_before_body envSize lcodeLabel lcontLabel "Opt") in
+	    beforeBody ^" \n"^
+		(fixStack args num) ^
+		body ^ "\n" ^
 	    "leave\n" ^
 	    "ret\n" ^ 
 	    lcontLabel ^ ":\n "
-
 
 	    and fixStack args num = 
 	    let fixedParamsCount = (List.length args) - 1 in

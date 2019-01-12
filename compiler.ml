@@ -20,7 +20,7 @@ let primitive_names_to_labels =
    "char->integer", "char_to_integer"; "integer->char", "integer_to_char"; "eq?", "is_eq";
    "+", "bin_add"; "*", "bin_mul"; "-", "bin_sub"; "/", "bin_div"; "<", "bin_lt"; "=", "bin_equ";
    "car", "car"; "cdr", "cdr"; "set-car!", "set_car"; "set-cdr!", "set_cdr"; "cons", "cons" ; "apply", "apply"
-(* todo: add apply implementation *)];;
+];;
 
 let make_prologue consts_tbl fvars_tbl =
   let get_const_address const = const_address const consts_tbl in
@@ -208,7 +208,7 @@ exception X_missing_input_file;;
 
 try
   let infile = Sys.argv.(1) in
-  let code =  (*(file_to_string "stdlib.scm") ^*) (file_to_string infile) in
+  let code =  (file_to_string "stdlib.scm") ^ (file_to_string infile) in
   let asts = string_to_asts code in
   let consts_tbl = Code_Gen.make_consts_tbl asts in
   let fvars_tbl = Code_Gen.make_fvars_tbl asts in

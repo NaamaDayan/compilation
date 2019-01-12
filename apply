@@ -1,3 +1,86 @@
+bin_add:
+    push rbp
+    mov rbp, rsp
+
+    mov r8, 0
+
+    mov rsi, PVAR(0)
+    push rsi
+    push 1
+    push SOB_NIL_ADDRESS
+    call is_float
+    add rsp, 3*WORD_SIZE 
+
+
+    cmp rax, SOB_TRUE_ADDRESS
+    je .test_next
+    or r8, 1
+
+.test_next:
+
+    mov rsi, PVAR(1)
+    push rsi
+    push 1
+    push SOB_NIL_ADDRESS
+    call is_float
+    add rsp, 3*WORD_SIZE 
+
+
+    cmp rax, SOB_TRUE_ADDRESS
+    je .load_numbers
+    or r8, 2
+
+.load_numbers:
+    push r8
+
+    shr r8, 1
+    jc .first_arg_int
+    mov rsi, PVAR(0)
+    FLOAT_VAL rsi, rsi 
+    movq xmm0, rsi
+    jmp .load_next_float
+
+.first_arg_int:
+    mov rsi, PVAR(0)
+    INT_VAL rsi, rsi
+    cvtsi2sd xmm0, rsi
+
+.load_next_float:
+    shr r8, 1
+    jc .second_arg_int
+    mov rsi, PVAR(1)
+    FLOAT_VAL rsi, rsi
+    movq xmm1, rsi
+    jmp .perform_float_op
+
+.second_arg_int:
+    mov rsi, PVAR(1)
+    INT_VAL rsi, rsi
+    cvtsi2sd xmm1, rsi
+
+.perform_float_op:
+    addsd xmm0, xmm1
+
+    pop r8
+    cmp r8, 3
+    jne .return_float
+
+    cvttsd2si rsi, xmm0
+    MAKE_INT(rax, rsi)
+    jmp .return
+
+.return_float:
+    movq rsi, xmm0
+    MAKE_FLOAT(rax, rsi)
+
+.return:
+
+    leave
+    ret
+
+
+
+
 apply:
         push rbp
         mov rbp, rsp
@@ -100,26 +183,6 @@ apply:
         .end:
         leave
         ret  
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         apply:
         push rbp

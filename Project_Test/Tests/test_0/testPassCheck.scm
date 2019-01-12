@@ -15,7 +15,7 @@
 ;Yours Output:
 '(
 
-Segmentation fault (core dumped)
+(1 2)
 
 
 )

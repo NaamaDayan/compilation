@@ -76,9 +76,9 @@ void InitializingTests()
     string test_8 = "'(55 . 4.4)";
     string test_9 = "'(55 4.4 \"gotcha\" #t #f #\\tab) #f #t \" hfdgfdgdf454 fgfd\" 'dfdsfdsfds";
     string test_10 = "'#(55 4.4 \"gotcha\" #t #f #\\tab \"\\n \\r \\f this is \\n \\r gfgfdgf 4543543 ff \\f \")";
-    string test_11 = /*"5 5.5 #t #f #\\h \" hello this is the final project\" '#() '#(5) '#(5 4) '#(4 5 6) '#(5 6 7 8 9) '() '(5) '(6 7) '(6 6 6 7)"
+    string test_11 = "5 5.5 #t #f #\\h \" hello this is the final project\" '#() '#(5) '#(5 4) '#(4 5 6) '#(5 6 7 8 9) '() '(5) '(6 7) '(6 6 6 7)"
                     "'hellothisisthefinalproject12345678910 '#(55 4.4 \"gotcha\" "
-                    "#t #f #\\tab) '(55 4.4 \"gotcha\" #t #f #\\tab)"*/""; 
+                    "#t #f #\\tab) '(55 4.4 \"gotcha\" #t #f #\\tab)"; 
     string test_12 = "(define x 5)";
     string test_13 = "(define x 5) x";
     string test_14 = "(if #t #f 5)";
@@ -144,7 +144,7 @@ void InitializingTests()
             ))
 
         ((foo5 1 2))   
-    )V0G0N";
+    )V0G0N";                                          //boxing test
     string test_32 = R"V0G0N(   
            '#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list     
     )V0G0N";
@@ -1546,14 +1546,19 @@ void InitializingTests()
     string test_82 = R"V0G0N(   
                 (define tail_test (lambda (n1) ((lambda (n2 n3) (+ n1 n3)) 10 15))) (apply tail_test '(2))
     )V0G0N"; 
-    string test_83 = /*R"V0G0N(   
+    string test_83 = R"V0G0N(   
                 (apply (lambda x x) '())                                     ; #t
-    )V0G0N"*/
+    )V0G0N"
     R"V0G0N(   
                 ((lambda x x) )                                     ; #t
     )V0G0N";
     string test_84 = R"V0G0N(   
-                (< 1 2)                                     ; #t
+                (define proc (lambda (x) 
+                                (lambda ()  
+                                    (lambda () x)
+                                )
+                            ))   
+            (((proc 88)))
     )V0G0N";
     string test_85 = R"V0G0N(   
                 (< -0.5 0.0002)                              ; #t
@@ -1576,21 +1581,21 @@ void InitializingTests()
     string test_91 = R"V0G0N(   
                 (= 2 2.0)
     )V0G0N";
-    string test_92 = R"V0G0N(   
+    string test_92 = /*R"V0G0N(   
                (> 11)                                      ; #t 
-    )V0G0N";
-    string test_93 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_93 = /*R"V0G0N(   
               (> 1 2)                                     ; #f  
-    )V0G0N";
-    string test_94 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_94 =/* R"V0G0N(   
               (> -0.5 0.001)                              ; #f  
-    )V0G0N";
-    string test_95 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_95 =/* R"V0G0N(   
                (> 3 2)                                     ; #t 
-    )V0G0N";
-    string test_96 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_96 = /*R"V0G0N(   
                (> -3 -2 -1 0 0.5 0.4 0.3) 
-    )V0G0N";
+    )V0G0N"*/"";
     string test_97 = R"V0G0N(   
                (+)                                         ; 0 
     )V0G0N";
@@ -1850,13 +1855,13 @@ void InitializingTests()
     string test_173 = R"V0G0N(   
                 (map list '("a" "b" "c") '('a 'b 'c) '(1 2 3) '(0.5 0.333 0.25))
     )V0G0N";
-    string test_174 = R"V0G0N(   
+    string test_174 = /*R"V0G0N(   
                 (not #f)                                    ; #t
-    )V0G0N";
-    string test_175 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_175 = /*R"V0G0N(   
                 (not #t)                                    ; #f
-    )V0G0N";
-   /* string test_176 = R"V0G0N(   
+    )V0G0N"*/"";
+    string test_176 = R"V0G0N(   
             (define x1 (lambda y y))           
        
             ;Checking applic is ok, poping stack correctly after execution, check rsp is restored correctly if seg fault 
@@ -1867,7 +1872,7 @@ void InitializingTests()
             (x1 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30)
             (x1 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40)
             (x1 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50)                                                ; #f
-    )V0G0N"; */
+    )V0G0N"; 
     string test_177 = R"V0G0N(   
                 (null? '())                                 ; #t
     )V0G0N";
@@ -3571,11 +3576,11 @@ void InitializingTests()
 
      
     )V0G0N";
-    string test_349 = R"V0G0N(   
-          (> 1 2)
-          (> 2 1 3)
+    string test_349 = /*R"V0G0N(   
+          (< 2 1)
+          (< 3 1 2)
     
-    )V0G0N";
+    )V0G0N"*/"";
     string test_350 = R"V0G0N(   
            (< 1 2)
           (< 2 1 3)
@@ -4114,9 +4119,9 @@ void InitializingTests()
 
       (filter odd? '(1 2 3 4))
       (filter
-        (lambda (x) (and (> x 0) (< x 10)))
+        (lambda (x) (and (< 0 x) (< x 10)))
         '(-5 15 3 14 -20 6 0 -9))
-    )V0G0N";
+    )V0G0N"; //todo: אולי לא להריץ בגלל הגדול
     string test_381 = R"V0G0N(   
            (define caar (lambda (pair) (car (car pair))))
           (define cadr (lambda (pair) (car (cdr pair))))
@@ -4152,9 +4157,9 @@ void InitializingTests()
 
         (remp odd? '(1 2 3 4)) 
         (remp
-          (lambda (x) (and (> x 0) (< x 10)))
+          (lambda (x) (and (< 0 x) (< x 10)))
           '(-5 15 3 14 -20 6 0 -9)) 
-    )V0G0N";
+    )V0G0N";//אולי לא להריץ בגלל הגדול
     string test_382 = R"V0G0N(   
            (define caar (lambda (pair) (car (car pair))))
           (define cadr (lambda (pair) (car (cdr pair))))
@@ -4524,13 +4529,13 @@ void InitializingTests()
             (foo 64 0)
 	
     )V0G0N";
-    string test_404 = R"V0G0N(   
+    string test_404 = /*R"V0G0N(   
             (define rocket (char->integer #\r))
             (define frily (char->integer #\f))
 
             (not (> rocket frily))
 	
-    )V0G0N";
+    )V0G0N"*/"";
     string test_405 = R"V0G0N(   
             (define sfx
             (lambda (bool)
@@ -4550,13 +4555,13 @@ void InitializingTests()
     string test_406 = R"V0G0N(   
                       (let ((baf (lambda (f)
                         (lambda (n)
-                          (if (> n 0)
+                          (if (< 0 n)
                               `(* ,n ,((f f) (- n 1)))
                                "end")))))
               ((baf baf) 3))
 	
     )V0G0N";
-    string test_407 = R"V0G0N(   
+    string test_407 = /*R"V0G0N(   
                       (define fraction? (lambda (x) (and (number? x) (not (integer? x)))))
 
                       ((lambda (x)
@@ -4569,7 +4574,7 @@ void InitializingTests()
                             ((procedure? x) "procedure")
                             (else "nothing"))) 'x)
 	
-    )V0G0N";
+    )V0G0N" because of not*/"";
     string test_408 = R"V0G0N(   
                       (define foo (lambda (x)
                       (cons
@@ -4694,7 +4699,7 @@ void InitializingTests()
                         (lambda (l)
                           (if (null? l) 0
                             (let ((cdr-max (f (cdr l))))
-                              (if (> (car l) cdr-max) (car l) cdr-max)))))))
+                              (if (< cdr-max (car l)) (car l) cdr-max)))))))
                     (define depth
                       (lambda (f)
                         (lambda (t)
@@ -4721,7 +4726,7 @@ void InitializingTests()
                         (if `notbool (+ (+ x  (* y (car z)) (car (cdr z))) 9)))) 8) 10 11 12)
 		
     )V0G0N";
-    string test_422 = R"V0G0N(   
+    string test_422 = /*R"V0G0N(   
                        (and
                           (boolean? #t)
                           (boolean? #f)
@@ -4766,8 +4771,8 @@ void InitializingTests()
                           (> 5 4 3 2 1)
                           )
 		
-    )V0G0N";
-    string test_423 = R"V0G0N(   
+    )V0G0N"*/"";//גדול;
+    string test_423 =/* R"V0G0N(   
             (define andmap (lambda (p lst)
             (or (null? lst)
                 (and (p (car lst)) (andmap p (cdr lst)))) ))
@@ -4782,6 +4787,15 @@ void InitializingTests()
             (vector-set! m i (make-vector columns))
             (loop m (+ i 1)))))])
     (loop (make-vector rows) 0)))) 
+
+    )V0G0N"*/
+    R"V0G0N(   
+            (define x (lambda (x1 x2)
+                (lambda()
+                    `(,x1 ,x2)
+                )
+            ))
+            ((x 1 2))
 
     )V0G0N";
     string test_424 = R"V0G0N(   
@@ -5158,7 +5172,7 @@ void InitializingTests()
             ;;;
             ;;; Programmer: Mayer Goldberg, 2012
 
-            (define positive? (lambda (x) (> x 0)))
+            (define positive? (lambda (x) (< 0 x)))
             
             (define even?
               (letrec ((even-1?
@@ -5180,7 +5194,7 @@ void InitializingTests()
                 even-1?))
 
             (even? 100) 
-    )V0G0N";
+    )V0G0N";//גדול;
     string test_441 = R"V0G0N(   
               ;;; torture-test-for-compiler-006.scm
             ;;; Yet another torture test -- a rather simple one...
@@ -5384,9 +5398,9 @@ void InitializingTests()
             (define matrix?
             (lambda (x)
                 (and (vector? x)
-                    (> (vector-length x) 0)
+                    (< 0 (vector-length x))
                     (vector? (vector-ref x 0)))))
-    )V0G0N";
+    )V0G0N";//גדול;
     string test_450 = R"V0G0N( 
             ; matrix-rows returns the number of rows in a matrix.
             (define matrix-rows
@@ -5453,7 +5467,7 @@ void InitializingTests()
               (define matrix?
                 (lambda (x)
                   (and (vector? x)
-                      (> (vector-length x) 0)
+                      (< 0 (vector-length x))
                       (vector? (vector-ref x 0)))))
 
               ; matrix-rows returns the number of rows in a matrix.
@@ -5571,7 +5585,7 @@ void InitializingTests()
 
                   (mul 0.5 '#(#(1 2 3)) )
                   (mul 1 0.5)
-    )V0G0N";
+    )V0G0N";//גדול;
 
     // Adding Tests
     /*testsCodes.push_back(test_0);
@@ -5633,7 +5647,7 @@ void InitializingTests()
     testsCodes.push_back(test_56);
     testsCodes.push_back(test_57);
     testsCodes.push_back(test_58);
-    testsCodes.push_back(test_59);//
+    testsCodes.push_back(test_59);
     testsCodes.push_back(test_60);
     testsCodes.push_back(test_61);
     testsCodes.push_back(test_62);
@@ -5750,7 +5764,7 @@ void InitializingTests()
     testsCodes.push_back(test_173);
     testsCodes.push_back(test_174);
     testsCodes.push_back(test_175);
-    //testsCodes.push_back(test_176);
+    testsCodes.push_back(test_176);
     testsCodes.push_back(test_177);
     testsCodes.push_back(test_178);
     testsCodes.push_back(test_179);
@@ -5794,14 +5808,14 @@ void InitializingTests()
     testsCodes.push_back(test_217);
     testsCodes.push_back(test_218);
     testsCodes.push_back(test_219);
-    testsCodes.push_back(test_220);*/
+    testsCodes.push_back(test_220);
     testsCodes.push_back(test_221);
     testsCodes.push_back(test_222);
     testsCodes.push_back(test_223);
     testsCodes.push_back(test_224);
     testsCodes.push_back(test_225);
     testsCodes.push_back(test_226);
-   /* testsCodes.push_back(test_227);
+    testsCodes.push_back(test_227);
     testsCodes.push_back(test_228);
     testsCodes.push_back(test_229);
     testsCodes.push_back(test_230);
@@ -5996,7 +6010,7 @@ void InitializingTests()
     testsCodes.push_back(test_419);
     testsCodes.push_back(test_420);
     testsCodes.push_back(test_421);
-    testsCodes.push_back(test_422);
+    testsCodes.push_back(test_422);*/
     testsCodes.push_back(test_423);
     testsCodes.push_back(test_424);
     testsCodes.push_back(test_425);
@@ -6029,7 +6043,7 @@ void InitializingTests()
     testsCodes.push_back(test_452);
     testsCodes.push_back(test_453);
     testsCodes.push_back(test_454);
-    testsCodes.push_back(test_455);*/
+    testsCodes.push_back(test_455);
 }
 
 /* ### Example of use ###

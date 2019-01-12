@@ -11,7 +11,7 @@
                             g) ls)))))
          f) '() args))))
 
-(define zero? 
+(define zero? ;works
   (let ((= =))
     (lambda (x) (= x 0))))
 
